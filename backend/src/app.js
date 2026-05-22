@@ -3,12 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { connectDB } from './config/db.js';
+import { connectDB, getConnectionStatus } from './config/db.js';
 import authRoutes from './routes/auth.js';
 import hackathonRoutes from './routes/hackathons.js';
 import submissionRoutes from './routes/submissions.js';
 import analyticsRoutes from './routes/analytics.js';
 import uploadRoutes from './routes/upload.js';
+import feedbackRoutes from './routes/feedback.js';
 import { startLinkChecker } from './services/linkChecker.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -26,9 +27,10 @@ app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', db: getConnectionStatus() ? 'connected' : 'disconnected', timestamp: new Date().toISOString() });
 });
 
 app.use(errorHandler);
@@ -37,7 +39,7 @@ async function start() {
   await connectDB();
   startLinkChecker();
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
