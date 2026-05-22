@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #080808;
+  --bg-surface: #0D0D0D;
+  --bg-elevated: #141414;
+  --text-primary: #F5EFE0;
+  --text-secondary: #6B6B6B;
+  --text-muted: #424242;
+  --accent-primary: #FF5500;
+  --accent-hover: #E64D00;
+  --border-color: #212121;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.glass {
+  background: rgba(13, 13, 13, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
