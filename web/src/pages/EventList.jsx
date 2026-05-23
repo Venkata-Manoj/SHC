@@ -1,15 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import EventCard from '../components/EventCard';
 import Filters from '../components/Filters';
 import CalendarView from '../components/CalendarView';
+import SkeletonCard from '../components/SkeletonCard';
 import { getBookmarks } from '../services/bookmarks';
 import api from '../services/api';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Archive } from 'lucide-react';
 
 export default function EventList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [view, setView] = useState('grid');
@@ -21,18 +24,20 @@ export default function EventList() {
     sort: '-startDate',
   });
   const [bookmarks, setBookmarks] = useState(getBookmarks());
+  const sentinelRef = useRef(null);
 
-  const loadEvents = useCallback(async (p = 1) => {
-    setLoading(true);
+  const loadEvents = useCallback(async (p = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     try {
       const params = { page: p, limit: 12, ...filters };
-      if (params.search) params.search = params.search;
       const res = await api.get('/hackathons', { params });
       setEvents(prev => p === 1 ? res.data.data : [...prev, ...res.data.data]);
       setTotalPages(res.data.pagination.totalPages);
       setPage(p);
     } catch { /* cached fallback handled by SW */ } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [filters]);
 
@@ -46,6 +51,17 @@ export default function EventList() {
     setSearchParams(params, { replace: true });
   }, [filters, setSearchParams]);
 
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && page < totalPages && !loadingMore) {
+        loadEvents(page + 1, true);
+      }
+    }, { rootMargin: '200px' });
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [page, totalPages, loadingMore, loadEvents]);
+
   const toggleBookmark = (id) => {
     const idx = bookmarks.indexOf(id);
     const updated = idx >= 0 ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
@@ -55,6 +71,12 @@ export default function EventList() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-heading text-3xl font-bold">Hackathons</h1>
+        <Link to="/events/archived" className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary">
+          <Archive className="h-4 w-4" /> Archived
+        </Link>
+      </div>
       <div className="flex flex-col gap-6">
         <Filters filters={filters} onChange={setFilters} view={view} onViewChange={setView} />
         
@@ -66,15 +88,19 @@ export default function EventList() {
               ? 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
               : 'flex flex-col gap-4'
             }>
-              {events.map(event => (
-                <EventCard
-                  key={event._id}
-                  event={event}
-                  view={view}
-                  isBookmarked={bookmarks.includes(event._id)}
-                  onToggleBookmark={() => toggleBookmark(event._id)}
-                />
-              ))}
+              {loading && events.length === 0 ? (
+                Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : (
+                events.map(event => (
+                  <EventCard
+                    key={event._id}
+                    event={event}
+                    view={view}
+                    isBookmarked={bookmarks.includes(event._id)}
+                    onToggleBookmark={() => toggleBookmark(event._id)}
+                  />
+                ))
+              )}
             </div>
             {events.length === 0 && !loading && (
               <div className="text-center py-20 text-text-secondary">
@@ -82,13 +108,12 @@ export default function EventList() {
                 <p className="mt-2">Try adjusting your search or filters</p>
               </div>
             )}
-            {page < totalPages && (
-              <div className="text-center mt-8">
-                <button onClick={() => loadEvents(page + 1)} className="bg-primary hover:bg-primary-hover text-background px-8 py-3 font-semibold rounded-xl transition-colors">
-                  Load More
-                </button>
+            {loadingMore && (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4">
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
               </div>
             )}
+            <div ref={sentinelRef} className="h-4" />
           </>
         )}
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Eye, Trash2, Pencil } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 
 const emptyForm = {
@@ -67,6 +68,7 @@ export default function CoordinatorPanel() {
       } else {
         await api.post('/hackathons', payload);
       }
+      toast.success(editId ? 'Hackathon updated!' : 'Hackathon created!');
       setShowForm(false);
       setForm(emptyForm);
       if (editId) {
@@ -75,7 +77,7 @@ export default function CoordinatorPanel() {
       const res = await api.get('/hackathons?limit=50');
       setEvents(res.data.data);
     } catch (err) {
-      alert(err.response?.data?.error || (editId ? 'Failed to update' : 'Failed to create'));
+      toast.error(err.response?.data?.error || (editId ? 'Failed to update' : 'Failed to create'));
     } finally {
       setLoading(false);
     }
@@ -92,8 +94,9 @@ export default function CoordinatorPanel() {
     try {
       await api.delete(`/hackathons/${id}`);
       setEvents(prev => prev.filter(e => e._id !== id));
+      toast.success('Hackathon deleted');
     } catch (err) {
-      alert(err.response?.data?.error || 'Delete failed');
+      toast.error(err.response?.data?.error || 'Delete failed');
     }
   }
 

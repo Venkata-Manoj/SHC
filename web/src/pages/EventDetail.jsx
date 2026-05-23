@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Globe, Users, DollarSign, ExternalLink, Share2, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Globe, Users, DollarSign, ExternalLink, Share2, ChevronLeft, AlertTriangle, Map } from 'lucide-react';
 import ShareButtons from '../components/ShareButtons';
 import { useAuth } from '../context/AuthContext';
+import SkeletonCard from '../components/SkeletonCard';
 import api from '../services/api';
 
 export default function EventDetail() {
@@ -15,7 +16,16 @@ export default function EventDetail() {
     api.get(`/hackathons/${id}`).then(res => setEvent(res.data)).finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>;
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="h-6 bg-elevated rounded w-24 mb-8 animate-pulse" />
+      <div className="h-64 sm:h-96 bg-elevated rounded-xl mb-8 animate-pulse" />
+      <div className="space-y-3">
+        <div className="h-8 bg-elevated rounded w-2/3 animate-pulse" />
+        <div className="h-4 bg-elevated rounded w-1/3 animate-pulse" />
+      </div>
+    </div>
+  );
   if (!event) return <div className="text-center py-20 text-text-secondary">Hackathon not found</div>;
 
   const regDisabled = event.isRegistrationLinkBroken && !event.registrationLinkOverride;
@@ -91,6 +101,24 @@ export default function EventDetail() {
               {s.description && <div className="text-text-secondary mt-1">{s.description}</div>}
             </div>
           ))}</div>
+        </div>
+      )}
+
+      {event.embeddedMapUrl && (
+        <div className="mb-8">
+          <h2 className="font-heading text-xl font-semibold mb-3 flex items-center gap-2"><Map className="h-5 w-5" /> Location</h2>
+          <div className="glass rounded-xl overflow-hidden">
+            <iframe
+              src={event.embeddedMapUrl}
+              width="100%"
+              height="350"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Event location map"
+            />
+          </div>
         </div>
       )}
 
