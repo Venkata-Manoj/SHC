@@ -8,11 +8,24 @@ export function handleValidation(req, res, next) {
   next();
 }
 
+function validateRegistrationDomain(value) {
+  try {
+    const allowed = process.env.ALLOWED_REGISTRATION_DOMAINS;
+    if (!allowed) return true;
+    const hostname = new URL(value).hostname.replace(/^www\./, '');
+    const domains = allowed.split(',').map(d => d.trim().toLowerCase());
+    return domains.some(d => hostname === d || hostname.endsWith('.' + d));
+  } catch {
+    throw new Error('Invalid registration URL');
+  }
+}
+
 export const validateHackathon = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('startDate').isISO8601().withMessage('Valid start date required'),
   body('endDate').isISO8601().withMessage('Valid end date required'),
-  body('registrationLink').isURL().withMessage('Valid registration link required'),
+  body('registrationLink').isURL().withMessage('Valid registration link required')
+    .custom(validateRegistrationDomain),
   body('mode').isIn(['ONLINE', 'OFFLINE', 'HYBRID']).withMessage('Valid mode required'),
   handleValidation,
 ];

@@ -69,6 +69,12 @@ export async function review(req, res, next) {
     const submission = await Submission.findById(id);
     if (!submission) return res.status(404).json({ error: 'Submission not found' });
 
+    submission.statusHistory.push({
+      status,
+      reviewedBy: req.user.id,
+      reviewedAt: new Date(),
+      note: reviewNote,
+    });
     submission.status = status;
     submission.reviewNote = reviewNote;
     submission.reviewedBy = req.user.id;

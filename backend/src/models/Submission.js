@@ -25,6 +25,12 @@ const submissionSchema = new mongoose.Schema({
   reviewNote: String,
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reviewedAt: Date,
+  statusHistory: [{
+    status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'] },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reviewedAt: { type: Date, default: Date.now },
+    note: String,
+  }],
   duplicationWarning: Boolean,
   createdAt: { type: Date, default: Date.now },
 });

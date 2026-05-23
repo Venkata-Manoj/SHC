@@ -1,8 +1,18 @@
 import Hackathon from '../models/Hackathon.js';
 import AnalyticsEvent from '../models/AnalyticsEvent.js';
+import { get, set, del, flush } from '../services/cache.js';
+
+const CACHE_TTL = 5 * 60 * 1000;
+
+function cacheKey(req) {
+  return `hackathons:${req.originalUrl}`;
+}
 
 export async function list(req, res, next) {
   try {
+    const cached = get(cacheKey(req));
+    if (cached) return res.json(cached);
+
     const {
       page = 1, limit = 12, search, mode, status, theme,
       sort = '-startDate', minPrize, maxTeamSize, organizer,
@@ -31,13 +41,16 @@ export async function list(req, res, next) {
       .limit(parseInt(limit))
       .populate('createdBy', 'name email');
 
-    res.json({
+    const result = {
       data: hackathons,
       pagination: {
         page: parseInt(page), limit: parseInt(limit), total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    set(cacheKey(req), result, CACHE_TTL);
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -45,6 +58,9 @@ export async function list(req, res, next) {
 
 export async function getById(req, res, next) {
   try {
+    const cached = get(cacheKey(req));
+    if (cached) return res.json(cached);
+
     const hackathon = await Hackathon.findById(req.params.id).populate('createdBy', 'name email');
     if (!hackathon || hackathon.deletedAt) {
       return res.status(404).json({ error: 'Hackathon not found' });
@@ -53,15 +69,22 @@ export async function getById(req, res, next) {
       hackathon: hackathon._id, type: 'VIEW',
       ip: req.ip, userAgent: req.headers['user-agent'],
     });
+
+    set(cacheKey(req), hackathon, CACHE_TTL);
     res.json(hackathon);
   } catch (err) {
     next(err);
   }
 }
 
+function invalidateCache() {
+  flush(); // broadcast flush since we can't enumerate all route-based keys
+}
+
 export async function create(req, res, next) {
   try {
     const hackathon = await Hackathon.create({ ...req.body, createdBy: req.user.id });
+    invalidateCache();
     res.status(201).json(hackathon);
   } catch (err) {
     next(err);
@@ -78,6 +101,7 @@ export async function update(req, res, next) {
     Object.assign(hackathon, req.body);
     hackathon.updatedAt = new Date();
     await hackathon.save();
+    invalidateCache();
     res.json(hackathon);
   } catch (err) {
     next(err);
@@ -91,6 +115,7 @@ export async function remove(req, res, next) {
     hackathon.deletedAt = new Date();
     hackathon.status = 'ENDED';
     await hackathon.save();
+    invalidateCache();
     res.json({ message: 'Hackathon soft-deleted' });
   } catch (err) {
     next(err);
@@ -104,6 +129,7 @@ export async function toggleArchive(req, res, next) {
     hackathon.isArchived = !hackathon.isArchived;
     hackathon.archivedAt = hackathon.isArchived ? new Date() : null;
     await hackathon.save();
+    invalidateCache();
     res.json(hackathon);
   } catch (err) {
     next(err);
@@ -119,6 +145,51 @@ export async function checkDuplicate(req, res, next) {
       deletedAt: null,
     });
     res.json({ isDuplicate: !!existing });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Recycle bin
+
+export async function listDeleted(req, res, next) {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const filter = { deletedAt: { $ne: null } };
+    const total = await Hackathon.countDocuments(filter);
+    const hackathons = await Hackathon.find(filter)
+      .sort({ deletedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    res.json({
+      data: hackathons,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function restore(req, res, next) {
+  try {
+    const hackathon = await Hackathon.findById(req.params.id);
+    if (!hackathon) return res.status(404).json({ error: 'Not found' });
+    hackathon.deletedAt = null;
+    hackathon.status = 'UPCOMING';
+    await hackathon.save();
+    invalidateCache();
+    res.json(hackathon);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function permanentDelete(req, res, next) {
+  try {
+    const hackathon = await Hackathon.findByIdAndDelete(req.params.id);
+    if (!hackathon) return res.status(404).json({ error: 'Not found' });
+    invalidateCache();
+    res.json({ message: 'Hackathon permanently deleted' });
   } catch (err) {
     next(err);
   }

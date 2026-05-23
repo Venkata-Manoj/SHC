@@ -24,7 +24,22 @@ async function checkLinks() {
   }
 }
 
+async function autoArchive() {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const result = await Hackathon.updateMany(
+    { endDate: { $lt: sixMonthsAgo }, isArchived: false, deletedAt: null },
+    { $set: { isArchived: true, archivedAt: new Date() } }
+  );
+
+  if (result.modifiedCount > 0) {
+    console.log(`Auto-archived ${result.modifiedCount} old hackathon(s)`);
+  }
+}
+
 export function startLinkChecker() {
   cron.schedule('0 0 * * *', checkLinks);
-  console.log('Link checker scheduled (daily at midnight)');
+  cron.schedule('0 1 * * *', autoArchive);
+  console.log('Link checker & auto-archive scheduler started (daily)');
 }
