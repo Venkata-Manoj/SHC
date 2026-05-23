@@ -22,6 +22,17 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    if (req.path.startsWith('/api/hackathons') && !req.headers.authorization) {
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+    } else {
+      res.set('Cache-Control', 'no-store');
+    }
+  }
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/submissions', submissionRoutes);
