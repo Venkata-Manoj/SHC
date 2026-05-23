@@ -18,25 +18,29 @@ export async function list(req, res, next) {
       sort = '-startDate', minPrize, maxTeamSize, organizer,
     } = req.query;
 
-    const filter = { deletedAt: null, isArchived: false };
+    const filter = { deletedAt: null };
+
+    if (req.query.archived === 'true') {
+      filter.isArchived = true;
+    } else {
+      filter.isArchived = false;
+    }
 
     if (status) filter.status = status;
     if (mode) filter.mode = mode;
     if (theme) filter.themes = theme;
     if (organizer) filter.organizer = { $regex: organizer, $options: 'i' };
 
+    const isSearch = !!search;
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { themes: { $regex: search, $options: 'i' } },
-      ];
+      filter.$text = { $search: search };
     }
     if (minPrize) filter.prizePool = { $gte: parseFloat(minPrize) };
 
     const total = await Hackathon.countDocuments(filter);
-    const hackathons = await Hackathon.find(filter)
-      .sort(sort)
+    const projection = isSearch ? { score: { $meta: 'textScore' } } : {};
+    const hackathons = await Hackathon.find(filter, projection)
+      .sort(isSearch ? { score: { $meta: 'textScore' } } : sort)
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .populate('createdBy', 'name email');

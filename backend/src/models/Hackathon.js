@@ -48,6 +48,7 @@ hackathonSchema.index({ name: 1, startDate: 1 });
 hackathonSchema.index({ status: 1, startDate: -1 });
 hackathonSchema.index({ mode: 1 });
 hackathonSchema.index({ isArchived: 1, deletedAt: 1 });
+hackathonSchema.index({ name: 'text', description: 'text', themes: 'text' });
 
 hackathonSchema.pre('save', function (next) {
   if (this.statusOverride) return next();

@@ -9,7 +9,22 @@ const emptyForm = {
   name: '', startDate: '', endDate: '', registrationLink: '',
   mode: 'ONLINE', location: '', description: '', prizePool: '',
   themes: '', organizer: '', teamSizeMin: 2, teamSizeMax: 4,
+  visibleFields: [],
 };
+
+const FIELD_OPTIONS = [
+  { key: 'name', label: 'Name' },
+  { key: 'description', label: 'Description' },
+  { key: 'startDate', label: 'Start Date' },
+  { key: 'endDate', label: 'End Date' },
+  { key: 'mode', label: 'Mode' },
+  { key: 'location', label: 'Location' },
+  { key: 'prizePool', label: 'Prize Pool' },
+  { key: 'themes', label: 'Themes' },
+  { key: 'organizer', label: 'Organizer' },
+  { key: 'sponsors', label: 'Sponsors' },
+  { key: 'schedule', label: 'Schedule' },
+];
 
 export default function CoordinatorPanel() {
   const { user } = useAuth();
@@ -45,6 +60,7 @@ export default function CoordinatorPanel() {
           organizer: e.organizer || '',
           teamSizeMin: e.teamSizeMin || 2,
           teamSizeMax: e.teamSizeMax || 4,
+          visibleFields: e.visibleFields || [],
         });
         setShowForm(true);
       }).catch(() => {
@@ -62,6 +78,7 @@ export default function CoordinatorPanel() {
       const payload = {
         ...form,
         themes: form.themes.split(',').map(t => t.trim()).filter(Boolean),
+        visibleFields: form.visibleFields,
       };
       if (editId) {
         await api.put(`/hackathons/${editId}`, payload);
@@ -142,6 +159,30 @@ export default function CoordinatorPanel() {
           </div>
           <textarea name="description" placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 focus:outline-none focus:border-primary min-h-[100px]" />
+          <div>
+            <p className="text-sm font-semibold mb-2">Visible Fields (leave empty to show all)</p>
+            <div className="flex flex-wrap gap-3">
+              {FIELD_OPTIONS.map(f => (
+                <label key={f.key} className="flex items-center gap-1.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={!form.visibleFields.length || form.visibleFields.includes(f.key)}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setForm(prev => {
+                        let vf = prev.visibleFields.length ? [...prev.visibleFields] : FIELD_OPTIONS.map(x => x.key);
+                        vf = checked ? [...vf, f.key] : vf.filter(k => k !== f.key);
+                        if (vf.length === FIELD_OPTIONS.length) vf = [];
+                        return { ...prev, visibleFields: vf };
+                      });
+                    }}
+                    className="accent-primary"
+                  />
+                  {f.label}
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="flex gap-4">
             <button type="submit" disabled={loading} className="bg-primary hover:bg-primary-hover text-background px-6 py-3 font-semibold rounded-xl transition-colors disabled:opacity-50">
               {loading ? 'Saving...' : (editId ? 'Update Hackathon' : 'Create Hackathon')}

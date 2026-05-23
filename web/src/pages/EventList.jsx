@@ -84,6 +84,9 @@ export default function EventList() {
           <CalendarView events={events} />
         ) : (
           <>
+            {filters.search && events.length > 0 && (
+              <div className="text-xs text-text-muted mb-2">Sorted by relevance</div>
+            )}
             <div className={view === 'grid'
               ? 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
               : 'flex flex-col gap-4'

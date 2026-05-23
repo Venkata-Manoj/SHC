@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import CoordinatorPanel from './pages/CoordinatorPanel';
 import Archive from './pages/Archive';
+import FeatureRequests from './pages/FeatureRequests';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/events" element={<EventList />} />
           <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/events/archived" element={<Archive />} />
+          <Route path="/feature-requests" element={<FeatureRequests />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
