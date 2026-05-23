@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CalendarView({ events }) {
   const navigate = useNavigate();
-  const now = new Date();
+  const [viewDate, setViewDate] = useState(new Date());
 
   const calendarEvents = useMemo(() => events.map(e => ({
     id: e._id,
@@ -14,15 +15,15 @@ export default function CalendarView({ events }) {
   })), [events]);
 
   const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-  const daysInMonth = getDaysInMonth(now);
-  const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
+  const daysInMonth = getDaysInMonth(viewDate);
+  const monthName = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   function getEventsForDay(day) {
-    const date = new Date(now.getFullYear(), now.getMonth(), day);
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
     return calendarEvents.filter(e => {
       const s = new Date(e.start);
       const end = new Date(e.end);
@@ -31,10 +32,33 @@ export default function CalendarView({ events }) {
     });
   }
 
+  function prevMonth() {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  }
+
+  function nextMonth() {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+  }
+
+  function goToToday() {
+    setViewDate(new Date());
+  }
+
   return (
     <div className="glass rounded-xl overflow-hidden">
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between">
         <h3 className="font-heading text-lg font-semibold">{monthName}</h3>
+        <div className="flex items-center gap-1">
+          <button onClick={goToToday} className="text-xs border border-border px-2 py-1 rounded hover:bg-surface mr-2">
+            Today
+          </button>
+          <button onClick={prevMonth} className="p-1 hover:bg-surface rounded">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button onClick={nextMonth} className="p-1 hover:bg-surface rounded">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-7 border-b border-border">
         {weekDays.map(d => (
@@ -47,7 +71,8 @@ export default function CalendarView({ events }) {
         ))}
         {days.map(day => {
           const dayEvents = getEventsForDay(day);
-          const isToday = day === now.getDate();
+          const today = new Date();
+          const isToday = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth() && day === today.getDate();
           return (
             <div key={day} className={`min-h-[100px] border-r border-b border-border p-1.5 ${isToday ? 'bg-primary/5' : ''}`}>
               <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-primary' : 'text-text-secondary'}`}>{day}</div>

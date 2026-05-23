@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import api from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api, { AUTH_TOKEN_KEY } from '../services/api';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,9 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, res.data.token);
       Alert.alert('Success', `Welcome, ${res.data.user.name}!`);
+      navigation.navigate('EventList');
     } catch (err) {
       Alert.alert('Error', err.response?.data?.error || 'Login failed');
     } finally {
