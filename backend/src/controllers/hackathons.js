@@ -1,6 +1,6 @@
 import Hackathon from '../models/Hackathon.js';
 import AnalyticsEvent from '../models/AnalyticsEvent.js';
-import { get, set, del, flush } from '../services/cache.js';
+import { get, set, flush } from '../services/cache.js';
 
 const CACHE_TTL = 5 * 60 * 1000;
 

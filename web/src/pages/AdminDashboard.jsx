@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate, Link, Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Link, Routes, Route } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, Check, X, Trash2, RotateCcw, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
