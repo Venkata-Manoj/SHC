@@ -1,5 +1,7 @@
 import Submission from '../models/Submission.js';
 import Hackathon from '../models/Hackathon.js';
+import Notification from '../models/Notification.js';
+import User from '../models/User.js';
 import Filter from 'bad-words';
 
 const filter = new Filter();
@@ -24,7 +26,17 @@ export async function create(req, res, next) {
       submitterEmail,
       posterUrl: req.file?.path,
       duplicationWarning: !!duplicate,
+      statusHistory: [{ status: 'PENDING', reviewedAt: new Date() }],
     });
+
+    const admins = await User.find({ role: 'ADMIN' }, '_id');
+    const notifications = admins.map(a => ({
+      type: 'NEW_SUBMISSION',
+      message: `New submission: ${hackathonData.name} by ${submitterEmail}`,
+      refId: submission._id,
+      recipient: a._id,
+    }));
+    if (notifications.length > 0) await Notification.insertMany(notifications);
 
     res.status(201).json(submission);
   } catch (err) {
@@ -64,10 +76,14 @@ export async function listPending(req, res, next) {
 export async function review(req, res, next) {
   try {
     const { id } = req.params;
-    const { status, reviewNote } = req.body;
+    const { status, reviewNote, hackathonData } = req.body;
 
     const submission = await Submission.findById(id);
     if (!submission) return res.status(404).json({ error: 'Submission not found' });
+
+    if (hackathonData) {
+      Object.assign(submission.hackathonData, hackathonData);
+    }
 
     submission.statusHistory.push({
       status,

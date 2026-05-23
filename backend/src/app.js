@@ -10,6 +10,7 @@ import submissionRoutes from './routes/submissions.js';
 import analyticsRoutes from './routes/analytics.js';
 import uploadRoutes from './routes/upload.js';
 import feedbackRoutes from './routes/feedback.js';
+import notificationRoutes from './routes/notifications.js';
 import { startLinkChecker } from './services/linkChecker.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -39,6 +40,7 @@ app.use('/api/submissions', submissionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', db: getConnectionStatus() ? 'connected' : 'disconnected', timestamp: new Date().toISOString() });

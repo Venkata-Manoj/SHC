@@ -12,5 +12,7 @@ router.get('/me', authenticate, authCtrl.getMe);
 router.put('/profile', authenticate, authCtrl.updateProfile);
 router.post('/invite', authenticate, authorize('ADMIN'), authCtrl.inviteCoordinator);
 router.post('/accept-invite', authCtrl.acceptInvite);
+router.post('/forgot-password', authCtrl.forgotPassword);
+router.post('/reset-password', authCtrl.resetPassword);
 
 export default router;

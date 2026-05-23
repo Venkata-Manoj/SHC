@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   isSandboxMode: { type: Boolean, default: false },
   profileImage: String,
   lastLoginAt: Date,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

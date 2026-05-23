@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import crypto from 'crypto';
+import { sendEmail } from '../services/email.js';
 
 function generateToken(user) {
   return jwt.sign(
@@ -110,6 +111,57 @@ export async function acceptInvite(req, res, next) {
     await invite.save();
     const jwtToken = generateToken(user);
     res.status(201).json({ user, token: jwtToken });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'No account with that email' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    const resetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset-password?token=${token}`;
+
+    const result = await sendEmail({
+      to: user.email,
+      subject: 'Password Reset — SIMATS Hackathon',
+      text: `You requested a password reset. Click the link: ${resetUrl}\nThis link expires in 1 hour.`,
+      html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 1 hour.</p>`,
+    });
+
+    res.json({ message: 'Password reset email sent', devMode: result?.devMode || false, resetUrl: result?.devMode ? resetUrl : undefined });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+
+    const hashed = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashed,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+    if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
   } catch (err) {
     next(err);
   }
