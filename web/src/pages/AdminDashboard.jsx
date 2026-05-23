@@ -281,7 +281,7 @@ function AnalyticsTab() {
       )}
 
       <div className="mt-4">
-        <a href={`${api.defaults.baseURL}/analytics/export`} className="inline-block bg-primary hover:bg-primary-hover text-background px-6 py-3 font-semibold rounded-xl transition-colors">
+        <a href="/api/analytics/export" className="inline-block bg-primary hover:bg-primary-hover text-background px-6 py-3 font-semibold rounded-xl transition-colors">
           Export CSV
         </a>
       </div>

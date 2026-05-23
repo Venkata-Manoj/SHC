@@ -1,5 +1,4 @@
 import Notification from '../models/Notification.js';
-import User from '../models/User.js';
 
 export async function list(req, res, next) {
   try {

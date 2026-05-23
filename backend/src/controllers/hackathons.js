@@ -15,7 +15,7 @@ export async function list(req, res, next) {
 
     const {
       page = 1, limit = 12, search, mode, status, theme,
-      sort = '-startDate', minPrize, maxTeamSize, organizer,
+      sort = '-startDate', minPrize, organizer,
     } = req.query;
 
     const filter = { deletedAt: null };
