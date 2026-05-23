@@ -1,9 +1,11 @@
 import 'dotenv/config';
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB, getConnectionStatus } from './config/db.js';
+import { getJwtSecret } from './middleware/auth.js';
 import authRoutes from './routes/auth.js';
 import hackathonRoutes from './routes/hackathons.js';
 import submissionRoutes from './routes/submissions.js';
@@ -17,11 +19,18 @@ import { errorHandler } from './middleware/errorHandler.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const corsOrigin = process.env.CORS_ORIGIN;
+if (corsOrigin) {
+  app.use(cors({ origin: corsOrigin, credentials: true }));
+} else {
+  app.use(cors({ origin: '*' }));
+}
+
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 app.use((req, res, next) => {
   if (req.method === 'GET') {
@@ -48,7 +57,24 @@ app.get('/api/health', (req, res) => {
 
 app.use(errorHandler);
 
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason instanceof Error ? reason.stack : reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.stack);
+  process.exitCode = 1;
+});
+
+export default app;
+
 async function start() {
+  try {
+    getJwtSecret();
+  } catch (err) {
+    console.error(`FATAL: ${err.message}`);
+    process.exit(1);
+  }
   await connectDB();
   startLinkChecker();
   app.listen(PORT, () => {
@@ -56,4 +82,6 @@ async function start() {
   });
 }
 
-start();
+if (!process.env.NODE_ENV?.startsWith('test')) {
+  start();
+}

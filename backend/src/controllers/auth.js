@@ -3,11 +3,12 @@ import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import crypto from 'crypto';
 import { sendEmail } from '../services/email.js';
+import { getJwtSecret } from '../middleware/auth.js';
 
 function generateToken(user) {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role },
-    process.env.JWT_SECRET || 'dev-secret',
+    getJwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
   );
 }
@@ -122,23 +123,26 @@ export async function forgotPassword(req, res, next) {
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: 'No account with that email' });
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await user.save();
 
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
-    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
-    await user.save();
+      const emailResetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset-password?token=${token}`;
+      const result = await sendEmail({
+        to: user.email,
+        subject: 'Password Reset — SIMATS Hackathon',
+        text: `You requested a password reset. Click the link: ${emailResetUrl}\nThis link expires in 1 hour.`,
+        html: `<p>You requested a password reset.</p><p><a href="${emailResetUrl}">Reset your password</a></p><p>This link expires in 1 hour.</p>`,
+      });
 
-    const resetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset-password?token=${token}`;
+      if (result?.devMode) {
+        return res.json({ message: 'If an account exists, a password reset email has been sent', devMode: true, resetUrl: emailResetUrl });
+      }
+    }
 
-    const result = await sendEmail({
-      to: user.email,
-      subject: 'Password Reset — SIMATS Hackathon',
-      text: `You requested a password reset. Click the link: ${resetUrl}\nThis link expires in 1 hour.`,
-      html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 1 hour.</p>`,
-    });
-
-    res.json({ message: 'Password reset email sent', devMode: result?.devMode || false, resetUrl: result?.devMode ? resetUrl : undefined });
+    res.json({ message: 'If an account exists, a password reset email has been sent' });
   } catch (err) {
     next(err);
   }
