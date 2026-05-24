@@ -15,6 +15,7 @@ const hackathonSchema = new mongoose.Schema({
   teamSizeMin: { type: Number, default: 1 },
   teamSizeMax: { type: Number, default: 4 },
   prizePool: String,
+  prizePoolValue: Number,
   sponsors: [{ name: String, logo: String }],
   schedule: [{ phase: String, date: Date, description: String }],
   contactInfo: { email: String, phone: String },
@@ -51,11 +52,17 @@ hackathonSchema.index({ isArchived: 1, deletedAt: 1 });
 hackathonSchema.index({ name: 'text', description: 'text', themes: 'text' });
 
 hackathonSchema.pre('save', function (next) {
-  if (this.statusOverride) return next();
-  const now = new Date();
-  if (now < this.startDate) this.status = 'UPCOMING';
-  else if (now >= this.startDate && now <= this.endDate) this.status = 'ONGOING';
-  else this.status = 'ENDED';
+  if (!this.statusOverride) {
+    const now = new Date();
+    if (now < this.startDate) this.status = 'UPCOMING';
+    else if (now >= this.startDate && now <= this.endDate) this.status = 'ONGOING';
+    else this.status = 'ENDED';
+  }
+  if (this.prizePool) {
+    const cleaned = this.prizePool.replace(/[^0-9.]/g, '');
+    const parsed = parseFloat(cleaned);
+    this.prizePoolValue = isNaN(parsed) ? undefined : parsed;
+  }
   next();
 });
 

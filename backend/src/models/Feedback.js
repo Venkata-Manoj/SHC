@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const feedbackSchema = new mongoose.Schema({
   name: { type: String, default: 'Anonymous' },
-  email: String,
+  email: { type: String, match: /^\S+@\S+\.\S+$/ },
   message: { type: String, required: true },
   type: { type: String, enum: ['FEEDBACK', 'FEATURE_REQUEST', 'BUG_REPORT'], default: 'FEEDBACK' },
   votes: { type: Number, default: 0 },

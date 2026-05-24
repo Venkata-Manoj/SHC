@@ -3,6 +3,7 @@ import Hackathon from '../models/Hackathon.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Filter from 'bad-words';
+import { escapeRegex } from '../utils/escapeRegex.js';
 
 const filter = new Filter();
 
@@ -13,9 +14,12 @@ export async function create(req, res, next) {
     const profane = filter.isProfane(
       [hackathonData.name, hackathonData.description, hackathonData.organizer].filter(Boolean).join(' ')
     );
+    if (profane) {
+      return res.status(400).json({ error: 'Submission contains inappropriate language' });
+    }
 
     const duplicate = await Hackathon.findOne({
-      name: { $regex: `^${hackathonData.name}$`, $options: 'i' },
+      name: { $regex: `^${escapeRegex(hackathonData.name)}$`, $options: 'i' },
       startDate: new Date(hackathonData.startDate),
       deletedAt: null,
     });
@@ -113,9 +117,17 @@ export async function review(req, res, next) {
 export async function bulkReview(req, res, next) {
   try {
     const { ids, status, reviewNote } = req.body;
+    const now = new Date();
     const result = await Submission.updateMany(
       { _id: { $in: ids }, status: 'PENDING' },
-      { status, reviewNote, reviewedBy: req.user.id, reviewedAt: new Date() }
+      {
+        $set: { status, reviewNote, reviewedBy: req.user.id, reviewedAt: now },
+        $push: {
+          statusHistory: {
+            $each: ids.map(() => ({ status, reviewedBy: req.user.id, reviewedAt: now, note: reviewNote })),
+          },
+        },
+      }
     );
     res.json({ modifiedCount: result.modifiedCount });
   } catch (err) {

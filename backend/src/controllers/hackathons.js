@@ -1,6 +1,7 @@
 import Hackathon from '../models/Hackathon.js';
 import AnalyticsEvent from '../models/AnalyticsEvent.js';
 import { get, set, flush } from '../services/cache.js';
+import { escapeRegex } from '../utils/escapeRegex.js';
 
 const CACHE_TTL = 5 * 60 * 1000;
 
@@ -29,13 +30,13 @@ export async function list(req, res, next) {
     if (status) filter.status = status;
     if (mode) filter.mode = mode;
     if (theme) filter.themes = theme;
-    if (organizer) filter.organizer = { $regex: organizer, $options: 'i' };
+    if (organizer) filter.organizer = { $regex: escapeRegex(organizer), $options: 'i' };
 
     const isSearch = !!search;
     if (search) {
       filter.$text = { $search: search };
     }
-    if (minPrize) filter.prizePool = { $gte: parseFloat(minPrize) };
+    if (minPrize) filter.prizePoolValue = { $gte: parseFloat(minPrize) };
 
     const total = await Hackathon.countDocuments(filter);
     const projection = isSearch ? { score: { $meta: 'textScore' } } : {};
@@ -144,7 +145,7 @@ export async function checkDuplicate(req, res, next) {
   try {
     const { name, startDate } = req.query;
     const existing = await Hackathon.findOne({
-      name: { $regex: `^${name}$`, $options: 'i' },
+      name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' },
       startDate: new Date(startDate),
       deletedAt: null,
     });
