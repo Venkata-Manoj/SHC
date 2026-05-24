@@ -35,7 +35,7 @@ export default function CookieConsent() {
       <div className="mx-auto max-w-2xl glass rounded-xl p-4 flex items-center justify-between gap-4" role="dialog" aria-modal="true" aria-label="Cookie consent">
         <p className="text-sm text-text-secondary">
           We use cookies for analytics. By continuing, you accept our{' '}
-          <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+          <Link to="/privacy" className="text-primary underline">Privacy Policy</Link>.
         </p>
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={accept} className="bg-primary hover:bg-primary-hover text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors">

@@ -25,6 +25,11 @@ jobs:
         run: |
           cd web && npm run build
 
+      - name: Start mock API server
+        run: |
+          node .github/workflows/mock-server.js &
+          sleep 1
+
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:

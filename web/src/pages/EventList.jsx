@@ -82,7 +82,7 @@ export default function EventList() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-heading text-3xl font-bold">Hackathons</h1>
-        <Link to="/events/archived" className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary">
+        <Link to="/events/archived" className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary underline decoration-transparent hover:decoration-current">
           <Archive className="h-4 w-4" /> Archived
         </Link>
       </div>

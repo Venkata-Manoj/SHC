@@ -2,10 +2,11 @@ import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
-import CookieConsent from './components/CookieConsent';
-import FeedbackWidget from './components/FeedbackWidget';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+
+const CookieConsent = lazy(() => import('./components/CookieConsent'));
+const FeedbackWidget = lazy(() => import('./components/FeedbackWidget'));
 
 const Home = lazy(() => import('./pages/Home'));
 const EventList = lazy(() => import('./pages/EventList'));

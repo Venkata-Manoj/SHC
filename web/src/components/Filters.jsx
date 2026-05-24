@@ -43,22 +43,22 @@ export default function Filters({ filters, onChange, view, onViewChange }) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <select value={filters.mode} onChange={e => update('mode', e.target.value)}
+        <select value={filters.mode} onChange={e => update('mode', e.target.value)} aria-label="Filter by mode"
           className="bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary">
           <option value="">All Modes</option>
           {MODES.filter(Boolean).map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filters.status} onChange={e => update('status', e.target.value)}
+        <select value={filters.status} onChange={e => update('status', e.target.value)} aria-label="Filter by status"
           className="bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary">
           <option value="">All Statuses</option>
           {STATUSES.filter(Boolean).map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={filters.theme} onChange={e => update('theme', e.target.value)}
+        <select value={filters.theme} onChange={e => update('theme', e.target.value)} aria-label="Filter by theme"
           className="bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary">
           <option value="">All Themes</option>
           {THEMES.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={filters.sort} onChange={e => update('sort', e.target.value)}
+        <select value={filters.sort} onChange={e => update('sort', e.target.value)} aria-label="Sort by"
           className="bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary">
           {SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
