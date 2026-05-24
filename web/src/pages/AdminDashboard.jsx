@@ -106,7 +106,7 @@ function SubmissionsList({ submissions, setSubmissions, detailed, showPoster }) 
           <div key={s._id} className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-3">
               {showPoster && s.posterUrl && (
-                <button onClick={() => setPosterPreview(s.posterUrl)} className="shrink-0">
+                <button onClick={() => setPosterPreview(s.posterUrl)} className="shrink-0" aria-label="View poster preview">
                   <img src={s.posterUrl} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
                 </button>
               )}

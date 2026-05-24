@@ -17,7 +17,7 @@ export default function EventCard({ event, view, isBookmarked, onToggleBookmark 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onToggleBookmark} className="p-2 hover:bg-elevated rounded-lg">
+          <button onClick={onToggleBookmark} className="p-2 hover:bg-elevated rounded-lg" aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}>
             {isBookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
           </button>
           <Link to={`/events/${event._id}`} className="p-2 hover:bg-elevated rounded-lg"><ExternalLink className="h-4 w-4" /></Link>
@@ -44,7 +44,7 @@ export default function EventCard({ event, view, isBookmarked, onToggleBookmark 
           <Link to={`/events/${event._id}`}>
             <h3 className="font-heading font-semibold hover:text-primary transition-colors line-clamp-2">{event.name}</h3>
           </Link>
-          <button onClick={onToggleBookmark} className="p-1.5 hover:bg-elevated rounded-lg shrink-0">
+          <button onClick={onToggleBookmark} className="p-1.5 hover:bg-elevated rounded-lg shrink-0" aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}>
             {isBookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4 text-text-secondary" />}
           </button>
         </div>

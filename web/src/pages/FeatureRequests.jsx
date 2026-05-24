@@ -60,6 +60,7 @@ export default function FeatureRequests() {
                 onClick={() => handleVote(r._id)}
                 disabled={voting[r._id]}
                 className="flex flex-col items-center gap-0.5 min-w-[48px] p-2 rounded-lg hover:bg-elevated transition-colors disabled:opacity-50"
+                aria-label={`Vote for ${r.name}`}
               >
                 <ArrowUp className="h-5 w-5 text-primary" />
                 <span className="font-bold text-sm">{r.votes}</span>

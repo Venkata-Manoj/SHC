@@ -221,7 +221,7 @@ export default function CoordinatorPanel() {
                       <Link to={`/events/${event._id}`} className="p-2 hover:bg-elevated rounded-lg"><Eye className="h-4 w-4" /></Link>
                       <Link to={`/coordinator/edit/${event._id}`} className="p-2 hover:bg-elevated rounded-lg"><Pencil className="h-4 w-4" /></Link>
                       {user.role === 'ADMIN' && (
-                        <button onClick={() => setDeleteConfirm(event._id)} className="p-2 hover:bg-elevated rounded-lg text-error"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setDeleteConfirm(event._id)} className="p-2 hover:bg-elevated rounded-lg text-error" aria-label="Delete hackathon"><Trash2 className="h-4 w-4" /></button>
                       )}
                     </div>
                   </td>

@@ -35,7 +35,7 @@ export default function Filters({ filters, onChange, view, onViewChange }) {
           ].map(v => (
             <button key={v.key} onClick={() => onViewChange(v.key)}
               className={`p-2 rounded-md transition-colors ${view === v.key ? 'bg-surface text-primary' : 'text-text-secondary hover:text-text-primary'}`}
-              aria-pressed={view === v.key}>
+              aria-pressed={view === v.key} aria-label={`${v.key} view`}>
               <v.icon className="h-4 w-4" />
             </button>
           ))}
