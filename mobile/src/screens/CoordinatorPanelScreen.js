@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, Alert, ScrollView, Modal } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const emptyForm = {
@@ -9,6 +10,7 @@ const emptyForm = {
 };
 
 export default function CoordinatorPanelScreen({ navigation }) {
+  const { user, logout } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -16,7 +18,13 @@ export default function CoordinatorPanelScreen({ navigation }) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadEvents(); }, []);
+  useEffect(() => {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'COORDINATOR')) {
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      return;
+    }
+    loadEvents();
+  }, []);
 
   async function loadEvents() {
     setLoading(true);
@@ -24,6 +32,11 @@ export default function CoordinatorPanelScreen({ navigation }) {
       const res = await api.get('/hackathons?limit=50');
       setEvents(res.data.data);
     } catch {} finally { setLoading(false); }
+  }
+
+  async function handleLogout() {
+    await logout();
+    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   }
 
   function openCreate() {
@@ -89,9 +102,14 @@ export default function CoordinatorPanelScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Coordinator Panel</Text>
-        <TouchableOpacity style={styles.createBtn} onPress={openCreate}>
-          <Text style={styles.createText}>+ New</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.createBtn} onPress={openCreate}>
+            <Text style={styles.createText}>+ New</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList data={events} keyExtractor={item => item._id}
@@ -158,8 +176,11 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#080808' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#F5EFE0' },
+  headerActions: { flexDirection: 'row', gap: 8 },
   createBtn: { backgroundColor: '#FF5500', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
   createText: { color: '#080808', fontWeight: '700', fontSize: 14 },
+  logoutBtn: { backgroundColor: '#EF444420', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  logoutText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
   card: { backgroundColor: '#0D0D0D', borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: '#212121' },
   cardTitle: { color: '#F5EFE0', fontSize: 15, fontWeight: '600' },
   cardDate: { color: '#6B6B6B', fontSize: 12, marginTop: 4 },

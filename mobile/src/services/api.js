@@ -20,5 +20,15 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  res => res,
+  async (err) => {
+    if (err.response?.status === 401) {
+      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+    return Promise.reject(err);
+  }
+);
+
 export { AUTH_TOKEN_KEY };
 export default api;

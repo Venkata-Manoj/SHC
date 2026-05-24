@@ -2,7 +2,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar, Linking } from 'react-native';
+import { StatusBar, ActivityIndicator, View } from 'react-native';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 import EventListScreen from './src/screens/EventListScreen';
 import EventDetailScreen from './src/screens/EventDetailScreen';
@@ -31,11 +32,15 @@ const linking = {
   },
 };
 
+const commonScreenOptions = {
+  headerStyle: { backgroundColor: '#080808' },
+  headerTintColor: '#F5EFE0',
+};
+
 function HomeTabs() {
   return (
     <Tab.Navigator screenOptions={{
-      headerStyle: { backgroundColor: '#080808' },
-      headerTintColor: '#F5EFE0',
+      ...commonScreenOptions,
       tabBarStyle: { backgroundColor: '#080808', borderTopColor: '#212121' },
       tabBarActiveTintColor: '#FF5500',
       tabBarInactiveTintColor: '#6B6B6B',
@@ -47,23 +52,41 @@ function HomeTabs() {
   );
 }
 
+function AppNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#080808', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF5500" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ ...commonScreenOptions, contentStyle: { backgroundColor: '#080808' } }}>
+      <Stack.Screen name="Home" component={HomeTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} />
+      {user?.role === 'ADMIN' && (
+        <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Admin' }} />
+      )}
+      {(user?.role === 'ADMIN' || user?.role === 'COORDINATOR') && (
+        <Stack.Screen name="CoordinatorPanel" component={CoordinatorPanelScreen} options={{ title: 'Coordinator' }} />
+      )}
+      <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ title: 'Feedback' }} />
+      <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Terms' }} />
+      <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: 'Privacy' }} />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
-    <NavigationContainer linking={linking}>
-      <StatusBar barStyle="light-content" backgroundColor="#080808" />
-      <Stack.Navigator screenOptions={{
-        headerStyle: { backgroundColor: '#080808' },
-        headerTintColor: '#F5EFE0',
-        contentStyle: { backgroundColor: '#080808' },
-      }}>
-        <Stack.Screen name="Home" component={HomeTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="EventDetail" component={EventDetailScreen} />
-        <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Admin' }} />
-        <Stack.Screen name="CoordinatorPanel" component={CoordinatorPanelScreen} options={{ title: 'Coordinator' }} />
-        <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ title: 'Feedback' }} />
-        <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Terms' }} />
-        <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: 'Privacy' }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer linking={linking}>
+        <StatusBar barStyle="light-content" backgroundColor="#080808" />
+        <AppNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }

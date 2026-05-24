@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -32,16 +32,23 @@ export default function CalendarView({ events }) {
     });
   }
 
-  function prevMonth() {
+  const prevMonth = useCallback(() => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
-  }
+  }, [viewDate]);
 
-  function nextMonth() {
+  const nextMonth = useCallback(() => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-  }
+  }, [viewDate]);
 
-  function goToToday() {
+  const goToToday = useCallback(() => {
     setViewDate(new Date());
+  }, []);
+
+  function onNavKeyDown(e, action) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
   }
 
   return (
@@ -49,13 +56,19 @@ export default function CalendarView({ events }) {
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h3 className="font-heading text-lg font-semibold">{monthName}</h3>
         <div className="flex items-center gap-1">
-          <button onClick={goToToday} className="text-xs border border-border px-2 py-1 rounded hover:bg-surface mr-2">
+          <button onClick={goToToday} onKeyDown={e => onNavKeyDown(e, goToToday)}
+            tabIndex={0} aria-label="Go to today"
+            className="text-xs border border-border px-2 py-1 rounded hover:bg-surface mr-2">
             Today
           </button>
-          <button onClick={prevMonth} className="p-1 hover:bg-surface rounded">
+          <button onClick={prevMonth} onKeyDown={e => onNavKeyDown(e, prevMonth)}
+            tabIndex={0} aria-label="Previous month"
+            className="p-1 hover:bg-surface rounded">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={nextMonth} className="p-1 hover:bg-surface rounded">
+          <button onClick={nextMonth} onKeyDown={e => onNavKeyDown(e, nextMonth)}
+            tabIndex={0} aria-label="Next month"
+            className="p-1 hover:bg-surface rounded">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -78,6 +91,8 @@ export default function CalendarView({ events }) {
               <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-primary' : 'text-text-secondary'}`}>{day}</div>
               {dayEvents.slice(0, 3).map(e => (
                 <button key={e.id} onClick={() => navigate(`/events/${e.id}`)}
+                  tabIndex={0}
+                  onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/events/${e.id}`); } }}
                   className={`block w-full text-left text-xs px-1.5 py-0.5 rounded mb-0.5 truncate ${
                     e.status === 'UPCOMING' ? 'bg-success/20 text-success' :
                     e.status === 'ONGOING' ? 'bg-primary/20 text-primary' : 'bg-text-muted/20 text-text-muted'

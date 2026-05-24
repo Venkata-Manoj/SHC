@@ -16,14 +16,18 @@ export async function list(req, res, next) {
 
     const {
       page = 1, limit = 12, search, mode, status, theme,
-      sort = '-startDate', minPrize, organizer,
+      sort = '-startDate', minPrize, organizer, ids,
     } = req.query;
 
     const filter = { deletedAt: null };
 
+    if (ids) {
+      filter._id = { $in: ids.split(',') };
+    }
+
     if (req.query.archived === 'true') {
       filter.isArchived = true;
-    } else {
+    } else if (!ids) {
       filter.isArchived = false;
     }
 

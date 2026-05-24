@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Share } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Share, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
@@ -14,21 +14,27 @@ const BOOKMARKS_KEY = 'shc-bookmarks';
 export default function BookmarksScreen({ navigation }) {
   const [bookmarks, setBookmarks] = useState([]);
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadBookmarks();
   }, []);
 
   async function loadBookmarks() {
+    setLoading(true);
     try {
       const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
       const ids = stored ? JSON.parse(stored) : [];
       setBookmarks(ids);
       if (ids.length > 0) {
-        const res = await api.get('/hackathons', { params: { limit: 50 } });
-        setEvents(res.data.data.filter(e => ids.includes(e._id)));
+        const res = await api.get('/hackathons', { params: { ids: ids.join(','), limit: 50 } });
+        setEvents(res.data.data);
+      } else {
+        setEvents([]);
       }
-    } catch { /* ignore */ }
+    } catch {} finally {
+      setLoading(false);
+    }
   }
 
   async function removeBookmark(id) {
@@ -42,6 +48,14 @@ export default function BookmarksScreen({ navigation }) {
     const base = 'simatshackathon://events?bookmark=';
     const link = bookmarks.map(id => `${base}${id}`).join('&');
     await Share.share({ message: link });
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#FF5500" />
+      </View>
+    );
   }
 
   return (
@@ -83,6 +97,7 @@ export default function BookmarksScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#080808', padding: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   shareBtn: { backgroundColor: '#FF5500', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 16 },
   shareBtnText: { color: '#080808', fontWeight: '700' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },

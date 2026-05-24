@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { AUTH_TOKEN_KEY } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 export default function LoginScreen({ navigation }) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,9 +17,9 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, res.data.token);
-      const role = res.data.user.role;
+      await login(res.data);
       Alert.alert('Success', `Welcome, ${res.data.user.name}!`);
+      const role = res.data.user.role;
       if (role === 'ADMIN') {
         navigation.navigate('AdminDashboard');
       } else if (role === 'COORDINATOR') {
