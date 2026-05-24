@@ -1,35 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import api from '../services/api';
+
+const PAGE_SIZE = 20;
 
 export default function EventListScreen({ navigation }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [mode, setMode] = useState('');
 
-  useEffect(() => {
-    loadEvents();
-  }, [search, mode]);
-
-  async function loadEvents() {
-    setLoading(true);
+  const loadEvents = useCallback(async (p = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const params = { limit: 20 };
+      const params = { page: p, limit: PAGE_SIZE };
       if (search) params.search = search;
       if (mode) params.mode = mode;
       const res = await api.get('/hackathons', { params });
-      setEvents(res.data.data);
-    } catch { /* fallback */ } finally {
+      setEvents(prev => p === 1 ? res.data.data : [...prev, ...res.data.data]);
+      setTotalPages(res.data.pagination.totalPages);
+      setPage(p);
+    } catch {
+      Alert.alert('Error', 'Failed to load events');
+    } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }
+  }, [search, mode]);
+
+  useEffect(() => { loadEvents(1); }, [loadEvents]);
 
   function getStatusStyle(status) {
     switch (status) {
       case 'UPCOMING': return { backgroundColor: '#10B98120', color: '#10B981' };
       case 'ONGOING': return { backgroundColor: '#FF550020', color: '#FF5500' };
       default: return { backgroundColor: '#42424220', color: '#424242' };
+    }
+  }
+
+  function handleEndReached() {
+    if (!loadingMore && page < totalPages) {
+      loadEvents(page + 1, true);
     }
   }
 
@@ -68,6 +83,9 @@ export default function EventListScreen({ navigation }) {
               {item.prizePool && <Text style={styles.prize}>{item.prizePool}</Text>}
             </TouchableOpacity>
           )}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#FF5500" style={{ marginVertical: 16 }} /> : null}
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator, Share } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator, Share, Alert } from 'react-native';
 import api from '../services/api';
 
 export default function EventDetailScreen({ route }) {
@@ -8,7 +8,10 @@ export default function EventDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/hackathons/${id}`).then(res => setEvent(res.data)).finally(() => setLoading(false));
+    api.get(`/hackathons/${id}`)
+      .then(res => setEvent(res.data))
+      .catch(() => Alert.alert('Error', 'Failed to load event'))
+      .finally(() => setLoading(false));
   }, [id]);
 
   async function handleRegister() {

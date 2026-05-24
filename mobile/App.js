@@ -1,14 +1,17 @@
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar, ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 import EventListScreen from './src/screens/EventListScreen';
 import EventDetailScreen from './src/screens/EventDetailScreen';
 import BookmarksScreen from './src/screens/BookmarksScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import CoordinatorPanelScreen from './src/screens/CoordinatorPanelScreen';
 import FeedbackScreen from './src/screens/FeedbackScreen';
@@ -67,6 +70,7 @@ function AppNavigator() {
     <Stack.Navigator screenOptions={{ ...commonScreenOptions, contentStyle: { backgroundColor: '#080808' } }}>
       <Stack.Screen name="Home" component={HomeTabs} options={{ headerShown: false }} />
       <Stack.Screen name="EventDetail" component={EventDetailScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create Account' }} />
       {user?.role === 'ADMIN' && (
         <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Admin' }} />
       )}
@@ -83,10 +87,14 @@ function AppNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer linking={linking}>
-        <StatusBar barStyle="light-content" backgroundColor="#080808" />
-        <AppNavigator />
-      </NavigationContainer>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ErrorBoundary>
+          <NavigationContainer linking={linking}>
+            <StatusBar barStyle="light-content" backgroundColor="#080808" />
+            <AppNavigator />
+          </NavigationContainer>
+        </ErrorBoundary>
+      </GestureHandlerRootView>
     </AuthProvider>
   );
 }

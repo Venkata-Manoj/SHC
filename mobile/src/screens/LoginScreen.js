@@ -44,6 +44,9 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.registerBtn} onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.registerText}>Create Account</Text>
+      </TouchableOpacity>
       <View style={styles.links}>
         <TouchableOpacity onPress={() => navigation.navigate('Feedback')}>
           <Text style={styles.link}>Send Feedback</Text>
@@ -65,6 +68,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#141414', borderWidth: 1, borderColor: '#212121', borderRadius: 8, padding: 14, color: '#F5EFE0', fontSize: 15, marginBottom: 12 },
   button: { backgroundColor: '#FF5500', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#080808', fontWeight: '700', fontSize: 16 },
+  registerBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#212121' },
+  registerText: { color: '#F5EFE0', fontWeight: '600', fontSize: 16 },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 20 },
   link: { color: '#6B6B6B', fontSize: 13 },
 });

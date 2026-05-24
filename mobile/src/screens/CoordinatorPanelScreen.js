@@ -31,7 +31,7 @@ export default function CoordinatorPanelScreen({ navigation }) {
     try {
       const res = await api.get('/hackathons?limit=50');
       setEvents(res.data.data);
-    } catch {} finally { setLoading(false); }
+    } catch { Alert.alert('Error', 'Failed to load events'); } finally { setLoading(false); }
   }
 
   async function handleLogout() {

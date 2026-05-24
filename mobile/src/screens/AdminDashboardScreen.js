@@ -15,8 +15,8 @@ export default function AdminDashboardScreen({ navigation }) {
       return;
     }
     Promise.all([
-      api.get('/analytics').then(r => setAnalytics(r.data)).catch(() => {}),
-      api.get('/submissions?status=PENDING').then(r => setSubmissions(r.data.data)).catch(() => {}),
+      api.get('/analytics').then(r => setAnalytics(r.data)).catch(() => { Alert.alert('Error', 'Failed to load analytics'); }),
+      api.get('/submissions?status=PENDING').then(r => setSubmissions(r.data.data)).catch(() => { Alert.alert('Error', 'Failed to load submissions'); }),
     ]).finally(() => setLoading(false));
   }, []);
 
