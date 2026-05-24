@@ -20,8 +20,8 @@ export default function Filters({ filters, onChange, view, onViewChange }) {
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-          <input
-            type="text" placeholder="Search hackathons..."
+            <input
+            type="search" placeholder="Search hackathons..." aria-label="Search hackathons"
             value={filters.search}
             onChange={e => update('search', e.target.value)}
             className="w-full bg-elevated border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
@@ -34,7 +34,8 @@ export default function Filters({ filters, onChange, view, onViewChange }) {
             { key: 'calendar', icon: Calendar },
           ].map(v => (
             <button key={v.key} onClick={() => onViewChange(v.key)}
-              className={`p-2 rounded-md transition-colors ${view === v.key ? 'bg-surface text-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+              className={`p-2 rounded-md transition-colors ${view === v.key ? 'bg-surface text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+              aria-pressed={view === v.key}>
               <v.icon className="h-4 w-4" />
             </button>
           ))}

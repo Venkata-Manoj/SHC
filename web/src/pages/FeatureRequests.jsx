@@ -10,7 +10,7 @@ export default function FeatureRequests() {
 
   useEffect(() => {
     api.get('/feedback', { params: { type: 'FEATURE_REQUEST', limit: 50 } })
-      .then(res => setRequests(res.data.data.sort((a, b) => b.votes - a.votes)))
+      .then(res => setRequests([...res.data.data].sort((a, b) => b.votes - a.votes)))
       .catch(() => toast.error('Failed to load feature requests'))
       .finally(() => setLoading(false));
   }, []);

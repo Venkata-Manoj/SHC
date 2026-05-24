@@ -6,12 +6,18 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const accepted = localStorage.getItem('cookie-consent');
-    if (!accepted) setVisible(true);
+    try {
+      const accepted = localStorage.getItem('cookie-consent');
+      if (!accepted) setVisible(true);
+    } catch {
+      setVisible(true);
+    }
   }, []);
 
   const accept = useCallback(() => {
-    localStorage.setItem('cookie-consent', 'true');
+    try {
+      localStorage.setItem('cookie-consent', 'true');
+    } catch { /* ignore */ }
     setVisible(false);
   }, []);
 

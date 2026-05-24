@@ -3,7 +3,7 @@ import EventCard from '../components/EventCard';
 import Filters from '../components/Filters';
 import CalendarView from '../components/CalendarView';
 import SkeletonCard from '../components/SkeletonCard';
-import { getBookmarks } from '../services/bookmarks';
+import { getBookmarks, toggleBookmark as toggleSharedBookmark } from '../services/bookmarks';
 import api from '../services/api';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Archive } from 'lucide-react';
@@ -27,6 +27,8 @@ export default function EventList() {
   const [bookmarks, setBookmarks] = useState(getBookmarks());
   const sentinelRef = useRef(null);
   const abortRef = useRef(null);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
   const loadEvents = useCallback(async (p = 1, append = false) => {
     if (abortRef.current) abortRef.current.abort();
@@ -35,7 +37,7 @@ export default function EventList() {
     if (append) setLoadingMore(true);
     else setLoading(true);
     try {
-      const params = { page: p, limit: 12, ...filters };
+      const params = { page: p, limit: 12, ...filtersRef.current };
       const res = await api.get('/hackathons', { params, signal: controller.signal });
       setEvents(prev => p === 1 ? res.data.data : [...prev, ...res.data.data]);
       setTotalPages(res.data.pagination.totalPages);
@@ -48,7 +50,7 @@ export default function EventList() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [filters]);
+  }, []);
 
   useEffect(() => { loadEvents(1); return () => abortRef.current?.abort(); }, [loadEvents]);
 
@@ -72,10 +74,8 @@ export default function EventList() {
   }, [page, totalPages, loadingMore, loadEvents]);
 
   const toggleBookmark = (id) => {
-    const idx = bookmarks.indexOf(id);
-    const updated = idx >= 0 ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
+    const updated = toggleSharedBookmark(id);
     setBookmarks(updated);
-    localStorage.setItem('shc-bookmarks', JSON.stringify(updated));
   };
 
   return (
@@ -88,7 +88,7 @@ export default function EventList() {
       </div>
       <div className="flex flex-col gap-6">
         <Filters filters={filters} onChange={setFilters} view={view} onViewChange={setView} />
-        
+
         {view === 'calendar' ? (
           <CalendarView events={events} />
         ) : (

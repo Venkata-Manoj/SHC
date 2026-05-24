@@ -51,6 +51,8 @@ export default function FeedbackWidget() {
               </select>
               <input placeholder="Name (optional)" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                 className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" />
+              <input type="email" placeholder="Email (optional)" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" />
               <textarea placeholder="Your message..." required value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
                 className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary min-h-[80px]" />
               <button type="submit" className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-hover text-background py-2 rounded-lg font-semibold text-sm transition-colors">

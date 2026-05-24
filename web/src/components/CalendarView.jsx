@@ -2,43 +2,46 @@ import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+function normalizeDate(date) {
+  const d = new Date(date);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
 export default function CalendarView({ events }) {
   const navigate = useNavigate();
-  const [viewDate, setViewDate] = useState(new Date());
+  const [viewDate, setViewDate] = useState(() => new Date());
 
   const calendarEvents = useMemo(() => events.map(e => ({
     id: e._id,
     title: e.name,
-    start: new Date(e.startDate),
-    end: new Date(e.endDate),
+    startMs: normalizeDate(e.startDate),
+    endMs: normalizeDate(e.endDate),
     status: e.status,
   })), [events]);
 
-  const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
-  const daysInMonth = getDaysInMonth(viewDate);
-  const monthName = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthName = useMemo(() => `${viewDate.toLocaleString('default', { month: 'long' })} ${year}`, [viewDate]);
 
-  function getEventsForDay(day) {
-    const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    return calendarEvents.filter(e => {
-      const s = new Date(e.start);
-      const end = new Date(e.end);
-      return date >= new Date(s.getFullYear(), s.getMonth(), s.getDate()) &&
-             date <= new Date(end.getFullYear(), end.getMonth(), end.getDate());
-    });
-  }
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
+  const weekDays = useMemo(() => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], []);
+
+  const getEventsForDay = useCallback((day) => {
+    const dateMs = new Date(year, month, day).getTime();
+    return calendarEvents.filter(e => dateMs >= e.startMs && dateMs <= e.endMs);
+  }, [calendarEvents, year, month]);
 
   const prevMonth = useCallback(() => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
-  }, [viewDate]);
+    setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  }, []);
 
   const nextMonth = useCallback(() => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-  }, [viewDate]);
+    setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  }, []);
 
   const goToToday = useCallback(() => {
     setViewDate(new Date());
@@ -85,7 +88,7 @@ export default function CalendarView({ events }) {
         {days.map(day => {
           const dayEvents = getEventsForDay(day);
           const today = new Date();
-          const isToday = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth() && day === today.getDate();
+          const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
           return (
             <div key={day} className={`min-h-[100px] border-r border-b border-border p-1.5 ${isToday ? 'bg-primary/5' : ''}`}>
               <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-primary' : 'text-text-secondary'}`}>{day}</div>

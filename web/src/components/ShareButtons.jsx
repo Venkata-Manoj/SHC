@@ -1,5 +1,6 @@
 import { Share2, Twitter, Linkedin, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function ShareButtons({ event }) {
   const [copied, setCopied] = useState(false);
@@ -17,7 +18,10 @@ export default function ShareButtons({ event }) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* fallback silently */ }
+      toast.success('Link copied!');
+    } catch {
+      toast.error('Failed to copy link');
+    }
   }
 
   return (
@@ -25,11 +29,11 @@ export default function ShareButtons({ event }) {
       {shareLinks.map(s => (
         <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
           className="p-2 bg-elevated hover:bg-border rounded-lg transition-colors"
-          title={`Share on ${s.name}`}>
+          title={`Share on ${s.name}`} aria-label={`Share on ${s.name}`}>
           <s.icon className="h-4 w-4" />
         </a>
       ))}
-      <button onClick={copyLink} className="p-2 bg-elevated hover:bg-border rounded-lg transition-colors" title="Copy link">
+      <button onClick={copyLink} className="p-2 bg-elevated hover:bg-border rounded-lg transition-colors" title="Copy link" aria-label="Copy event link">
         {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
       </button>
     </div>

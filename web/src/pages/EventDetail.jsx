@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Globe, Users, DollarSign, ExternalLink, Share2, ChevronLeft, AlertTriangle, Map } from 'lucide-react';
+import { Calendar, Clock, MapPin, DollarSign, ExternalLink, ChevronLeft, AlertTriangle, Map } from 'lucide-react';
 import ShareButtons from '../components/ShareButtons';
 import { useAuth } from '../context/AuthContext';
 import SkeletonCard from '../components/SkeletonCard';

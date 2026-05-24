@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Eye, Trash2, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import api from '../services/api';
 
 const emptyForm = {
@@ -37,6 +38,7 @@ export default function CoordinatorPanel() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     api.get('/hackathons?limit=50').then(res => setEvents(res.data.data)).catch(() => {});
@@ -107,7 +109,6 @@ export default function CoordinatorPanel() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this hackathon?')) return;
     try {
       await api.delete(`/hackathons/${id}`);
       setEvents(prev => prev.filter(e => e._id !== id));
@@ -115,6 +116,7 @@ export default function CoordinatorPanel() {
     } catch (err) {
       toast.error(err.response?.data?.error || 'Delete failed');
     }
+    setDeleteConfirm(null);
   }
 
   return (
@@ -219,7 +221,7 @@ export default function CoordinatorPanel() {
                       <Link to={`/events/${event._id}`} className="p-2 hover:bg-elevated rounded-lg"><Eye className="h-4 w-4" /></Link>
                       <Link to={`/coordinator/edit/${event._id}`} className="p-2 hover:bg-elevated rounded-lg"><Pencil className="h-4 w-4" /></Link>
                       {user.role === 'ADMIN' && (
-                        <button onClick={() => handleDelete(event._id)} className="p-2 hover:bg-elevated rounded-lg text-error"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setDeleteConfirm(event._id)} className="p-2 hover:bg-elevated rounded-lg text-error"><Trash2 className="h-4 w-4" /></button>
                       )}
                     </div>
                   </td>
@@ -229,6 +231,15 @@ export default function CoordinatorPanel() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Delete Hackathon"
+        message="Are you sure you want to delete this hackathon? It will be moved to the recycle bin."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => handleDelete(deleteConfirm)}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

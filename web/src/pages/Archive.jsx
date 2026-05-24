@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import EventCard from '../components/EventCard';
-import { getBookmarks } from '../services/bookmarks';
+import { getBookmarks, toggleBookmark as toggleSharedBookmark } from '../services/bookmarks';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -16,10 +16,8 @@ export default function Archive() {
   }, []);
 
   const toggleBookmark = (id) => {
-    const idx = bookmarks.indexOf(id);
-    const updated = idx >= 0 ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
+    const updated = toggleSharedBookmark(id);
     setBookmarks(updated);
-    localStorage.setItem('shc-bookmarks', JSON.stringify(updated));
   };
 
   return (

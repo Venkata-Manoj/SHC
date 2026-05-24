@@ -2,6 +2,12 @@
   "name": "shc-web",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://simats-hackathon.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Venkata-Manoj/SHC.git"
+  },
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "NODE_OPTIONS=--experimental-global-webcrypto vite build",

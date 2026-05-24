@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Link, Routes, Route } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowLeft, Check, X, Trash2, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Check, X, Trash2, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import api from '../services/api';
 
 function OverviewTab() {
-  const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [submissions, setSubmissions] = useState([]);
 
@@ -162,6 +162,7 @@ function SubmissionsTab() {
 function RecycleBinTab() {
   const [deleted, setDeleted] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   async function loadDeleted() {
     setLoading(true);
@@ -186,7 +187,6 @@ function RecycleBinTab() {
   }
 
   async function handlePermanentDelete(id) {
-    if (!confirm('Permanently delete this hackathon? This cannot be undone.')) return;
     try {
       await api.delete(`/hackathons/${id}/permanent`);
       setDeleted(prev => prev.filter(h => h._id !== id));
@@ -194,6 +194,7 @@ function RecycleBinTab() {
     } catch (err) {
       toast.error('Permanent delete failed');
     }
+    setDeleteConfirm(null);
   }
 
   return (
@@ -228,7 +229,7 @@ function RecycleBinTab() {
                       <button onClick={() => handleRestore(h._id)} className="flex items-center gap-1 text-xs bg-success/20 text-success px-3 py-1 rounded-lg hover:bg-success/30">
                         <RotateCcw className="h-3 w-3" /> Restore
                       </button>
-                      <button onClick={() => handlePermanentDelete(h._id)} className="flex items-center gap-1 text-xs bg-error/20 text-error px-3 py-1 rounded-lg hover:bg-error/30">
+                      <button onClick={() => setDeleteConfirm(h._id)} className="flex items-center gap-1 text-xs bg-error/20 text-error px-3 py-1 rounded-lg hover:bg-error/30">
                         <Trash2 className="h-3 w-3" /> Delete Forever
                       </button>
                     </div>
@@ -239,6 +240,15 @@ function RecycleBinTab() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Delete Hackathon Permanently"
+        message="This action cannot be undone. The hackathon and all its data will be permanently deleted."
+        confirmLabel="Delete Forever"
+        variant="danger"
+        onConfirm={() => handlePermanentDelete(deleteConfirm)}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </>
   );
 }
