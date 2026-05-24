@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Globe, Users, DollarSign, ExternalLink, Share2, ChevronLeft, AlertTriangle, Map } from 'lucide-react';
 import ShareButtons from '../components/ShareButtons';
@@ -11,11 +12,16 @@ export default function EventDetail() {
   const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get(`/hackathons/${id}`).then(res => setEvent(res.data)).finally(() => setLoading(false));
+    api.get(`/hackathons/${id}`)
+      .then(res => setEvent(res.data))
+      .catch(err => setError(err.response?.data?.error || 'Failed to load event'))
+      .finally(() => setLoading(false));
   }, [id]);
 
+  if (error) return <div className="text-center py-20 text-error">{error}</div>;
   if (loading) return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="h-6 bg-elevated rounded w-24 mb-8 animate-pulse" />

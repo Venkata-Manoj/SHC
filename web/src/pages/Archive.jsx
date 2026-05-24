@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import EventCard from '../components/EventCard';
 import { getBookmarks } from '../services/bookmarks';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 
 export default function Archive() {
@@ -11,7 +12,7 @@ export default function Archive() {
   useEffect(() => {
     api.get('/hackathons', { params: { archived: true, limit: 50 } }).then(res => {
       setEvents(res.data.data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => toast.error('Failed to load archived events')).finally(() => setLoading(false));
   }, []);
 
   const toggleBookmark = (id) => {

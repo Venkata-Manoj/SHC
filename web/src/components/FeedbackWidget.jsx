@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, X, Send } from 'lucide-react';
 import api from '../services/api';
 
@@ -6,6 +6,15 @@ export default function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '', type: 'FEEDBACK' });
   const [sent, setSent] = useState(false);
+
+  const close = useCallback(() => { setOpen(false); }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e) { if (e.key === 'Escape') close(); }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, close]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -19,15 +28,16 @@ export default function FeedbackWidget() {
   return (
     <>
       <button onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 bg-primary hover:bg-primary-hover text-background p-3 rounded-full shadow-lg transition-colors">
+        className="fixed bottom-6 right-6 z-40 bg-primary hover:bg-primary-hover text-background p-3 rounded-full shadow-lg transition-colors"
+        aria-label="Open feedback form">
         <MessageSquare className="h-5 w-5" />
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-6 z-40 w-80 glass rounded-xl p-4 shadow-xl">
+        <div className="fixed bottom-20 right-6 z-40 w-80 glass rounded-xl p-4 shadow-xl" role="dialog" aria-modal="true" aria-label="Feedback form">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-semibold">Feedback</h3>
-            <button onClick={() => setOpen(false)}><X className="h-4 w-4" /></button>
+            <button onClick={() => setOpen(false)} aria-label="Close feedback form"><X className="h-4 w-4" /></button>
           </div>
           {sent ? (
             <div className="text-success text-center py-8">Thanks for your feedback!</div>

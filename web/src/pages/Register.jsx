@@ -35,15 +35,20 @@ export default function Register() {
         <h1 className="font-heading text-2xl font-bold text-center mb-6">Create Account</h1>
         {error && <div className="bg-error/10 text-error px-4 py-2 rounded-lg mb-4 text-sm">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="name" placeholder="Full Name" required value={form.name} onChange={handleChange}
+          <label htmlFor="reg-name" className="sr-only">Full Name</label>
+          <input id="reg-name" name="name" placeholder="Full Name" required value={form.name} onChange={handleChange}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary" />
-          <input name="email" type="email" placeholder="Email (college email preferred)" required value={form.email} onChange={handleChange}
+          <label htmlFor="reg-email" className="sr-only">Email</label>
+          <input id="reg-email" name="email" type="email" placeholder="Email (college email preferred)" required value={form.email} onChange={handleChange}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary" />
-          <input name="password" type="password" placeholder="Password (min 8 chars)" required minLength={8} value={form.password} onChange={handleChange}
+          <label htmlFor="reg-password" className="sr-only">Password</label>
+          <input id="reg-password" name="password" type="password" placeholder="Password (min 8 chars)" required minLength={8} value={form.password} onChange={handleChange}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary" />
-          <input name="college" placeholder="College / Institution" value={form.college} onChange={handleChange}
+          <label htmlFor="reg-college" className="sr-only">College / Institution</label>
+          <input id="reg-college" name="college" placeholder="College / Institution" value={form.college} onChange={handleChange}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary" />
-          <input name="department" placeholder="Department / Major" value={form.department} onChange={handleChange}
+          <label htmlFor="reg-dept" className="sr-only">Department / Major</label>
+          <input id="reg-dept" name="department" placeholder="Department / Major" value={form.department} onChange={handleChange}
             className="w-full bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary" />
           <button type="submit" disabled={loading}
             className="w-full bg-primary hover:bg-primary-hover text-background font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">

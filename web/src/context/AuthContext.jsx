@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -23,19 +23,25 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  function login(res) {
+  useEffect(() => {
+    function onLogout() { logout(); }
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, [logout]);
+
+  const login = useCallback((res) => {
     localStorage.setItem('token', res.token);
     setToken(res.token);
     setUser(res.user);
     api.defaults.headers.common['Authorization'] = `Bearer ${res.token}`;
-  }
+  }, []);
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
     delete api.defaults.headers.common['Authorization'];
-  }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>

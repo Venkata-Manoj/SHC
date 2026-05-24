@@ -7,6 +7,7 @@ import { getBookmarks } from '../services/bookmarks';
 import api from '../services/api';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Archive } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function EventList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,23 +26,31 @@ export default function EventList() {
   });
   const [bookmarks, setBookmarks] = useState(getBookmarks());
   const sentinelRef = useRef(null);
+  const abortRef = useRef(null);
 
   const loadEvents = useCallback(async (p = 1, append = false) => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     if (append) setLoadingMore(true);
     else setLoading(true);
     try {
       const params = { page: p, limit: 12, ...filters };
-      const res = await api.get('/hackathons', { params });
+      const res = await api.get('/hackathons', { params, signal: controller.signal });
       setEvents(prev => p === 1 ? res.data.data : [...prev, ...res.data.data]);
       setTotalPages(res.data.pagination.totalPages);
       setPage(p);
-    } catch { /* cached fallback handled by SW */ } finally {
+    } catch (err) {
+      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+        toast.error('Failed to load events');
+      }
+    } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   }, [filters]);
 
-  useEffect(() => { loadEvents(1); }, [loadEvents]);
+  useEffect(() => { loadEvents(1); return () => abortRef.current?.abort(); }, [loadEvents]);
 
   useEffect(() => {
     const params = {};
