@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, Alert, ScrollView, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, Alert, ScrollView, Modal, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { getStatusStyle } from '../utils/statusStyle';
 
-const emptyForm = {
-  name: '', startDate: '', endDate: '', registrationLink: '',
-  mode: 'ONLINE', location: '', description: '', prizePool: '',
-  themes: '', organizer: '',
-};
+function getEmptyForm() {
+  return {
+    name: '', startDate: '', endDate: '', registrationLink: '',
+    mode: 'ONLINE', location: '', description: '', prizePool: '',
+    themes: '', organizer: '',
+  };
+}
 
 export default function CoordinatorPanelScreen({ navigation }) {
   const { user, logout } = useAuth();
@@ -15,7 +18,7 @@ export default function CoordinatorPanelScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(getEmptyForm);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function CoordinatorPanelScreen({ navigation }) {
 
   function openCreate() {
     setEditId(null);
-    setForm(emptyForm);
+    setForm(getEmptyForm());
     setModalVisible(true);
   }
 
@@ -62,7 +65,25 @@ export default function CoordinatorPanelScreen({ navigation }) {
     setModalVisible(true);
   }
 
+  function validateForm() {
+    const errors = [];
+    if (!form.name.trim()) errors.push('Name is required');
+    if (!form.startDate.trim()) errors.push('Start date is required');
+    if (!form.endDate.trim()) errors.push('End date is required');
+    if (!form.registrationLink.trim()) errors.push('Registration link is required');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.startDate)) errors.push('Start date must be YYYY-MM-DD format');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.endDate)) errors.push('End date must be YYYY-MM-DD format');
+    if (form.name.length > 200) errors.push('Name must be 200 characters or less');
+    if (form.description.length > 5000) errors.push('Description must be 5000 characters or less');
+    return errors;
+  }
+
   async function handleSave() {
+    const errors = validateForm();
+    if (errors.length > 0) {
+      Alert.alert('Validation Error', errors.join('\n'));
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -96,82 +117,101 @@ export default function CoordinatorPanelScreen({ navigation }) {
     ]);
   }
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#FF5500" /></View>;
+  const renderItem = useCallback(({ item }) => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{item.name}</Text>
+      <Text style={styles.cardDate}>{new Date(item.startDate).toLocaleDateString()}</Text>
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => openEdit(item)}
+          accessibilityLabel={`Edit ${item.name}`}
+          accessibilityRole="button"
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(item._id)}
+          accessibilityLabel={`Delete ${item.name}`}
+          accessibilityRole="button"
+        >
+          <Text style={styles.deleteText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  ), []);
+
+  const keyExtractor = useCallback((item) => item?._id?.toString() ?? Math.random().toString(), []);
+
+  if (loading) return <SafeAreaView style={styles.safeArea}><View style={styles.centered}><ActivityIndicator size="large" color="#FF5500" /></View></SafeAreaView>;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Coordinator Panel</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.createBtn} onPress={openCreate}>
-            <Text style={styles.createText}>+ New</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <FlatList data={events} keyExtractor={item => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardDate}>{new Date(item.startDate).toLocaleDateString()}</Text>
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
-                <Text style={styles.editText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item._id)}>
-                <Text style={styles.deleteText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Coordinator Panel</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.createBtn} onPress={openCreate} accessibilityLabel="Create new hackathon" accessibilityRole="button">
+              <Text style={styles.createText}>+ New</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn} accessibilityLabel="Log out" accessibilityRole="button">
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
           </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
-
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editId ? 'Edit Hackathon' : 'New Hackathon'}</Text>
-
-            <TextInput style={styles.input} placeholder="Name *" placeholderTextColor="#424242"
-              value={form.name} onChangeText={v => setForm({ ...form, name: v })} />
-            <TextInput style={styles.input} placeholder="Organizer" placeholderTextColor="#424242"
-              value={form.organizer} onChangeText={v => setForm({ ...form, organizer: v })} />
-            <TextInput style={styles.input} placeholder="Start Date (YYYY-MM-DD) *" placeholderTextColor="#424242"
-              value={form.startDate} onChangeText={v => setForm({ ...form, startDate: v })} />
-            <TextInput style={styles.input} placeholder="End Date (YYYY-MM-DD) *" placeholderTextColor="#424242"
-              value={form.endDate} onChangeText={v => setForm({ ...form, endDate: v })} />
-            <TextInput style={styles.input} placeholder="Registration Link *" placeholderTextColor="#424242"
-              value={form.registrationLink} onChangeText={v => setForm({ ...form, registrationLink: v })} />
-            <TextInput style={styles.input} placeholder="Mode (ONLINE/OFFLINE/HYBRID)" placeholderTextColor="#424242"
-              value={form.mode} onChangeText={v => setForm({ ...form, mode: v })} />
-            <TextInput style={styles.input} placeholder="Location" placeholderTextColor="#424242"
-              value={form.location} onChangeText={v => setForm({ ...form, location: v })} />
-            <TextInput style={styles.input} placeholder="Prize Pool" placeholderTextColor="#424242"
-              value={form.prizePool} onChangeText={v => setForm({ ...form, prizePool: v })} />
-            <TextInput style={styles.input} placeholder="Themes (comma separated)" placeholderTextColor="#424242"
-              value={form.themes} onChangeText={v => setForm({ ...form, themes: v })} />
-            <TextInput style={[styles.input, { minHeight: 80 }]} placeholder="Description" placeholderTextColor="#424242" multiline
-              value={form.description} onChangeText={v => setForm({ ...form, description: v })} />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                <Text style={styles.saveText}>{saving ? 'Saving...' : (editId ? 'Update' : 'Create')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
         </View>
-      </Modal>
-    </View>
+
+        <FlatList
+          data={events}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
+
+        <Modal visible={modalVisible} animationType="slide" transparent>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+            <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>{editId ? 'Edit Hackathon' : 'New Hackathon'}</Text>
+
+              <TextInput style={styles.input} placeholder="Name *" placeholderTextColor="#424242"
+                value={form.name} onChangeText={v => setForm({ ...form, name: v })} accessibilityLabel="Hackathon name" />
+              <TextInput style={styles.input} placeholder="Organizer" placeholderTextColor="#424242"
+                value={form.organizer} onChangeText={v => setForm({ ...form, organizer: v })} accessibilityLabel="Organizer name" />
+              <TextInput style={styles.input} placeholder="Start Date (YYYY-MM-DD) *" placeholderTextColor="#424242"
+                value={form.startDate} onChangeText={v => setForm({ ...form, startDate: v })} accessibilityLabel="Start date" />
+              <TextInput style={styles.input} placeholder="End Date (YYYY-MM-DD) *" placeholderTextColor="#424242"
+                value={form.endDate} onChangeText={v => setForm({ ...form, endDate: v })} accessibilityLabel="End date" />
+              <TextInput style={styles.input} placeholder="Registration Link *" placeholderTextColor="#424242"
+                value={form.registrationLink} onChangeText={v => setForm({ ...form, registrationLink: v })} accessibilityLabel="Registration link" />
+              <TextInput style={styles.input} placeholder="Mode (ONLINE/OFFLINE/HYBRID)" placeholderTextColor="#424242"
+                value={form.mode} onChangeText={v => setForm({ ...form, mode: v })} accessibilityLabel="Event mode" />
+              <TextInput style={styles.input} placeholder="Location" placeholderTextColor="#424242"
+                value={form.location} onChangeText={v => setForm({ ...form, location: v })} accessibilityLabel="Location" />
+              <TextInput style={styles.input} placeholder="Prize Pool" placeholderTextColor="#424242"
+                value={form.prizePool} onChangeText={v => setForm({ ...form, prizePool: v })} accessibilityLabel="Prize pool" />
+              <TextInput style={styles.input} placeholder="Themes (comma separated)" placeholderTextColor="#424242"
+                value={form.themes} onChangeText={v => setForm({ ...form, themes: v })} accessibilityLabel="Themes" />
+              <TextInput style={[styles.input, { minHeight: 80 }]} placeholder="Description" placeholderTextColor="#424242" multiline
+                value={form.description} onChangeText={v => setForm({ ...form, description: v })} accessibilityLabel="Description" />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving} accessibilityLabel={editId ? 'Update hackathon' : 'Create hackathon'} accessibilityRole="button">
+                  <Text style={styles.saveText}>{saving ? 'Saving...' : (editId ? 'Update' : 'Create')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel" accessibilityRole="button">
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#080808' },
   container: { flex: 1, backgroundColor: '#080808', padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#080808' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

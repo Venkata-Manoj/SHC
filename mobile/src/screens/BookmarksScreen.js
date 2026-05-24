@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Share, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Share, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
@@ -15,13 +15,9 @@ export default function BookmarksScreen({ navigation }) {
   const [bookmarks, setBookmarks] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadBookmarks();
-  }, []);
-
-  async function loadBookmarks() {
-    setLoading(true);
+  const loadBookmarks = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
       const ids = stored ? JSON.parse(stored) : [];
@@ -34,8 +30,18 @@ export default function BookmarksScreen({ navigation }) {
       }
     } catch {} finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadBookmarks();
+  }, [loadBookmarks]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadBookmarks();
+  }, [loadBookmarks]);
 
   async function removeBookmark(id) {
     const updated = bookmarks.filter(b => b !== id);
@@ -50,48 +56,77 @@ export default function BookmarksScreen({ navigation }) {
     await Share.share({ message: link });
   }
 
+  const renderItem = useCallback(({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('EventDetail', { id: item._id })}
+      accessibilityLabel={`View bookmarked hackathon ${item.name}`}
+      accessibilityRole="button"
+    >
+      <Text style={styles.title}>{item.name}</Text>
+      <Text style={styles.date}>{new Date(item.startDate).toLocaleDateString()}</Text>
+      <TouchableOpacity
+        onPress={() => removeBookmark(item._id)}
+        style={styles.removeBtn}
+        accessibilityLabel={`Remove ${item.name} from bookmarks`}
+        accessibilityRole="button"
+      >
+        <Text style={styles.removeText}>Remove</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  ), [navigation, bookmarks]);
+
+  const keyExtractor = useCallback((item) => item?._id?.toString() ?? Math.random().toString(), []);
+
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
+      <SafeAreaView style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#FF5500" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {events.length > 0 && (
-        <TouchableOpacity style={styles.shareBtn} onPress={generateShareLink}>
+        <TouchableOpacity
+          style={styles.shareBtn}
+          onPress={generateShareLink}
+          accessibilityLabel="Share bookmarked hackathons"
+          accessibilityRole="button"
+        >
           <Text style={styles.shareBtnText}>Share Bookmarked Hackathons</Text>
         </TouchableOpacity>
       )}
       {events.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No bookmarks yet</Text>
-          <Text style={styles.emptyDesc}>Save hackathons to access them offline</Text>
+          <Text style={styles.emptyDesc}>Save hackathons to access them later</Text>
         </View>
       ) : (
-        <FlatList data={events} keyExtractor={item => item._id}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('EventDetail', { id: item._id })}>
-              <Text style={styles.title}>{item.name}</Text>
-              <Text style={styles.date}>{new Date(item.startDate).toLocaleDateString()}</Text>
-              <TouchableOpacity onPress={() => removeBookmark(item._id)} style={styles.removeBtn}>
-                <Text style={styles.removeText}>Remove</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          )}
+        <FlatList
+          data={events}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5500" colors={['#FF5500']} />}
+          contentContainerStyle={{ paddingBottom: 12 }}
         />
       )}
       <View style={styles.moreSection}>
         <Text style={styles.moreTitle}>More</Text>
         {MORE_LINKS.map(link => (
-          <TouchableOpacity key={link.screen} style={styles.moreLink} onPress={() => navigation.navigate(link.screen)}>
+          <TouchableOpacity
+            key={link.screen}
+            style={styles.moreLink}
+            onPress={() => navigation.navigate(link.screen)}
+            accessibilityLabel={link.label}
+            accessibilityRole="button"
+          >
             <Text style={styles.moreLinkText}>{link.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -108,7 +143,7 @@ const styles = StyleSheet.create({
   date: { color: '#6B6B6B', fontSize: 13, marginTop: 4 },
   removeBtn: { marginTop: 8, alignSelf: 'flex-start' },
   removeText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
-  moreSection: { borderTopWidth: 1, borderTopColor: '#212121', paddingTop: 16, marginTop: 8, marginBottom: 32 },
+  moreSection: { borderTopWidth: 1, borderTopColor: '#212121', paddingTop: 16, marginTop: 8, paddingBottom: 32 },
   moreTitle: { fontSize: 14, fontWeight: '700', color: '#F5EFE0', marginBottom: 8 },
   moreLink: { paddingVertical: 10 },
   moreLinkText: { color: '#FF5500', fontSize: 14 },

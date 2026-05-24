@@ -3,7 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar, ActivityIndicator, View } from 'react-native';
+import { StatusBar, ActivityIndicator, View, Text } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
@@ -48,9 +48,12 @@ function HomeTabs() {
       tabBarActiveTintColor: '#FF5500',
       tabBarInactiveTintColor: '#6B6B6B',
     }}>
-      <Tab.Screen name="Events" component={EventListScreen} />
-      <Tab.Screen name="Bookmarks" component={BookmarksScreen} />
-      <Tab.Screen name="Login" component={LoginScreen} />
+      <Tab.Screen name="Events" component={EventListScreen}
+        options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>&#9776;</Text> }} />
+      <Tab.Screen name="Bookmarks" component={BookmarksScreen}
+        options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>&#10022;</Text> }} />
+      <Tab.Screen name="Login" component={LoginScreen}
+        options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>&#9679;</Text> }} />
     </Tab.Navigator>
   );
 }

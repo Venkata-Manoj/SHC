@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -14,10 +14,15 @@ export default function AdminDashboardScreen({ navigation }) {
       navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
       return;
     }
-    Promise.all([
-      api.get('/analytics').then(r => setAnalytics(r.data)).catch(() => { Alert.alert('Error', 'Failed to load analytics'); }),
-      api.get('/submissions?status=PENDING').then(r => setSubmissions(r.data.data)).catch(() => { Alert.alert('Error', 'Failed to load submissions'); }),
-    ]).finally(() => setLoading(false));
+    Promise.allSettled([
+      api.get('/analytics'),
+      api.get('/submissions?status=PENDING'),
+    ]).then(([analyticsRes, submissionsRes]) => {
+      if (analyticsRes.status === 'fulfilled') setAnalytics(analyticsRes.value.data);
+      else console.warn('Analytics fetch failed:', analyticsRes.reason);
+      if (submissionsRes.status === 'fulfilled') setSubmissions(submissionsRes.value.data.data);
+      else console.warn('Submissions fetch failed:', submissionsRes.reason);
+    }).finally(() => setLoading(false));
   }, []);
 
   async function handleReview(id, status) {
@@ -35,65 +40,85 @@ export default function AdminDashboardScreen({ navigation }) {
     navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   }
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#FF5500" /></View>;
+  const reviewApprove = useCallback((id) => () => handleReview(id, 'APPROVED'), []);
+  const reviewReject = useCallback((id) => () => handleReview(id, 'REJECTED'), []);
+
+  if (loading) return <SafeAreaView style={styles.safeArea}><View style={styles.centered}><ActivityIndicator size="large" color="#FF5500" /></View></SafeAreaView>;
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Admin Dashboard</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Admin Dashboard</Text>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn} accessibilityLabel="Log out" accessibilityRole="button">
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.subtitle}>Manage hackathons, submissions, and view analytics</Text>
+
+        {analytics && (
+          <View style={styles.statsRow}>
+            <StatCard label="Hackathons" value={analytics.totals?.hackathons} />
+            <StatCard label="Views" value={analytics.totals?.views} />
+            <StatCard label="Clicks" value={analytics.totals?.clicks} />
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.navBtn}
+          onPress={() => navigation.navigate('CoordinatorPanel')}
+          accessibilityLabel="Manage events" accessibilityRole="button"
+        >
+          <Text style={styles.navBtnText}>Manage Events</Text>
         </TouchableOpacity>
-      </View>
-      <Text style={styles.subtitle}>Manage hackathons, submissions, and view analytics</Text>
 
-      {analytics && (
-        <View style={styles.statsRow}>
-          <StatCard label="Hackathons" value={analytics.totals?.hackathons} />
-          <StatCard label="Views" value={analytics.totals?.views} />
-          <StatCard label="Clicks" value={analytics.totals?.clicks} />
-        </View>
-      )}
-
-      <TouchableOpacity style={styles.navBtn} onPress={() => navigation.navigate('CoordinatorPanel')}>
-        <Text style={styles.navBtnText}>Manage Events</Text>
-      </TouchableOpacity>
-
-      {submissions.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pending Submissions ({submissions.length})</Text>
-          {submissions.map(s => (
-            <View key={s._id} style={styles.submissionCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.submissionName}>{s.hackathonData?.name}</Text>
-                <Text style={styles.submissionBy}>by {s.submitterEmail}</Text>
+        {submissions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Pending Submissions ({submissions.length})</Text>
+            {submissions.map(s => (
+              <View key={s._id} style={styles.submissionCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.submissionName}>{s.hackathonData?.name}</Text>
+                  <Text style={styles.submissionBy}>by {s.submitterEmail}</Text>
+                </View>
+                <View style={styles.reviewRow}>
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={reviewApprove(s._id)}
+                    accessibilityLabel={`Approve submission from ${s.submitterEmail}`}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.approveText}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={reviewReject(s._id)}
+                    accessibilityLabel={`Reject submission from ${s.submitterEmail}`}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.rejectText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.reviewRow}>
-                <TouchableOpacity style={styles.approveBtn} onPress={() => handleReview(s._id, 'APPROVED')}>
-                  <Text style={styles.approveText}>Approve</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReview(s._id, 'REJECTED')}>
-                  <Text style={styles.rejectText}>Reject</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-function StatCard({ label, value }) {
+const StatCard = React.memo(function StatCard({ label, value }) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statValue}>{value ?? '-'}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#080808' },
   container: { flex: 1, backgroundColor: '#080808', padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#080808' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import api from '../services/api';
 
 const TYPES = [
@@ -36,34 +36,45 @@ export default function FeedbackScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-      <Text style={styles.title}>Send Feedback</Text>
-      <Text style={styles.subtitle}>Help us improve the platform</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title}>Send Feedback</Text>
+          <Text style={styles.subtitle}>Help us improve the platform</Text>
 
-      <View style={styles.typeRow}>
-        {TYPES.map(t => (
-          <TouchableOpacity key={t.key} onPress={() => setType(t.key)}
-            style={[styles.typeBtn, type === t.key && styles.typeBtnActive]}>
-            <Text style={[styles.typeText, type === t.key && styles.typeTextActive]}>{t.label}</Text>
+          <View style={styles.typeRow}>
+            {TYPES.map(t => (
+              <TouchableOpacity
+                key={t.key}
+                onPress={() => setType(t.key)}
+                style={[styles.typeBtn, type === t.key && styles.typeBtnActive]}
+                accessibilityLabel={`Select ${t.label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: type === t.key }}
+              >
+                <Text style={[styles.typeText, type === t.key && styles.typeTextActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TextInput style={styles.input} placeholder="Your name (optional)" placeholderTextColor="#424242"
+            value={name} onChangeText={setName} accessibilityLabel="Your name" />
+          <TextInput style={styles.input} placeholder="Your email (optional)" placeholderTextColor="#424242"
+            value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" accessibilityLabel="Your email" />
+          <TextInput style={[styles.input, styles.messageInput]} placeholder="Your message *" placeholderTextColor="#424242" multiline
+            value={message} onChangeText={setMessage} accessibilityLabel="Your message" />
+
+          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={sending} accessibilityLabel="Submit feedback" accessibilityRole="button">
+            <Text style={styles.submitText}>{sending ? 'Sending...' : 'Submit'}</Text>
           </TouchableOpacity>
-        ))}
-      </View>
-
-      <TextInput style={styles.input} placeholder="Your name (optional)" placeholderTextColor="#424242"
-        value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Your email (optional)" placeholderTextColor="#424242"
-        value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={[styles.input, styles.messageInput]} placeholder="Your message *" placeholderTextColor="#424242" multiline
-        value={message} onChangeText={setMessage} />
-
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={sending}>
-        <Text style={styles.submitText}>{sending ? 'Sending...' : 'Submit'}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#080808' },
   container: { flex: 1, backgroundColor: '#080808' },
   title: { fontSize: 22, fontWeight: '700', color: '#F5EFE0', marginBottom: 4 },
   subtitle: { color: '#6B6B6B', fontSize: 13, marginBottom: 16 },

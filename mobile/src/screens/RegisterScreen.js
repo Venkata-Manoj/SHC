@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import api from '../services/api';
 
 export default function RegisterScreen({ navigation }) {
@@ -20,6 +20,10 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/auth/register', form);
@@ -33,33 +37,56 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join the SIMATS Hackathon community</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join the SIMATS Hackathon community</Text>
 
-      <TextInput style={styles.input} placeholder="Full Name *" placeholderTextColor="#424242"
-        value={form.name} onChangeText={update('name')} autoCapitalize="words" />
-      <TextInput style={styles.input} placeholder="Email *" placeholderTextColor="#424242"
-        value={form.email} onChangeText={update('email')} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="Password * (min 8 chars)" placeholderTextColor="#424242"
-        value={form.password} onChangeText={update('password')} secureTextEntry />
-      <TextInput style={styles.input} placeholder="College / Institution" placeholderTextColor="#424242"
-        value={form.college} onChangeText={update('college')} />
-      <TextInput style={styles.input} placeholder="Department / Major" placeholderTextColor="#424242"
-        value={form.department} onChangeText={update('department')} />
+          <TextInput
+            style={styles.input} placeholder="Full Name *" placeholderTextColor="#424242"
+            value={form.name} onChangeText={update('name')} autoCapitalize="words"
+            accessibilityLabel="Full name"
+          />
+          <TextInput
+            style={styles.input} placeholder="Email *" placeholderTextColor="#424242"
+            value={form.email} onChangeText={update('email')} keyboardType="email-address" autoCapitalize="none"
+            accessibilityLabel="Email address"
+          />
+          <TextInput
+            style={styles.input} placeholder="Password * (min 8 chars)" placeholderTextColor="#424242"
+            value={form.password} onChangeText={update('password')} secureTextEntry
+            accessibilityLabel="Password"
+          />
+          <TextInput
+            style={styles.input} placeholder="College / Institution" placeholderTextColor="#424242"
+            value={form.college} onChangeText={update('college')}
+            accessibilityLabel="College or institution"
+          />
+          <TextInput
+            style={styles.input} placeholder="Department / Major" placeholderTextColor="#424242"
+            value={form.department} onChangeText={update('department')}
+            accessibilityLabel="Department or major"
+          />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Create Account'}</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button} onPress={handleRegister} disabled={loading}
+            accessibilityLabel="Create your account" accessibilityRole="button"
+          >
+            <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Create Account'}</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Text style={styles.backText}>Already have an account? Sign In</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityLabel="Go back to sign in" accessibilityRole="button">
+            <Text style={styles.backText}>Already have an account? Sign In</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#080808' },
   container: { flex: 1, backgroundColor: '#080808' },
   content: { padding: 24, justifyContent: 'center', flexGrow: 1 },
   title: { fontSize: 28, fontWeight: '700', color: '#F5EFE0', marginBottom: 4, textAlign: 'center' },
