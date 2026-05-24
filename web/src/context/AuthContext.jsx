@@ -5,7 +5,9 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    try { return localStorage.getItem('token'); } catch { return null; }
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,12 +25,6 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  useEffect(() => {
-    function onLogout() { logout(); }
-    window.addEventListener('auth:logout', onLogout);
-    return () => window.removeEventListener('auth:logout', onLogout);
-  }, [logout]);
-
   const login = useCallback((res) => {
     localStorage.setItem('token', res.token);
     setToken(res.token);
@@ -42,6 +38,12 @@ export function AuthProvider({ children }) {
     setUser(null);
     delete api.defaults.headers.common['Authorization'];
   }, []);
+
+  useEffect(() => {
+    function onLogout() { logout(); }
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>
