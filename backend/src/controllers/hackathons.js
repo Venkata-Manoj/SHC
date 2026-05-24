@@ -42,24 +42,38 @@ export async function list(req, res, next) {
     }
     if (minPrize) filter.prizePoolValue = { $gte: parseFloat(minPrize) };
 
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 12));
     const total = await Hackathon.countDocuments(filter);
     const projection = isSearch ? { score: { $meta: 'textScore' } } : {};
     const hackathons = await Hackathon.find(filter, projection)
       .sort(isSearch ? { score: { $meta: 'textScore' } } : sort)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
       .populate('createdBy', 'name email');
 
     const result = {
       data: hackathons,
       pagination: {
-        page: parseInt(page), limit: parseInt(limit), total,
-        totalPages: Math.ceil(total / limit),
+        page: pageNum, limit: limitNum, total,
+        totalPages: Math.ceil(total / limitNum),
       },
     };
 
     set(cacheKey(req), result, CACHE_TTL);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function checkDuplicate(req, res, next) {
+  try {
+    const { name } = req.query;
+    if (!name) return res.status(400).json({ error: 'Name query param required' });
+    const safeName = escapeRegex(name);
+    const existing = await Hackathon.findOne({ name: { $regex: `^${safeName}$`, $options: 'i' }, deletedAt: null });
+    res.json({ isDuplicate: !!existing });
   } catch (err) {
     next(err);
   }
@@ -87,7 +101,7 @@ export async function getById(req, res, next) {
 }
 
 function invalidateCache() {
-  flush(); // broadcast flush since we can't enumerate all route-based keys
+  flush('hackathons:');
 }
 
 export async function create(req, res, next) {
@@ -140,20 +154,6 @@ export async function toggleArchive(req, res, next) {
     await hackathon.save();
     invalidateCache();
     res.json(hackathon);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function checkDuplicate(req, res, next) {
-  try {
-    const { name, startDate } = req.query;
-    const existing = await Hackathon.findOne({
-      name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' },
-      startDate: new Date(startDate),
-      deletedAt: null,
-    });
-    res.json({ isDuplicate: !!existing });
   } catch (err) {
     next(err);
   }

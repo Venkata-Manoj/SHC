@@ -3,38 +3,46 @@ import axios from 'axios';
 import Hackathon from '../models/Hackathon.js';
 
 async function checkLinks() {
-  const hackathons = await Hackathon.find({
-    registrationLinkOverride: false,
-    deletedAt: null,
-  });
+  try {
+    const hackathons = await Hackathon.find({
+      registrationLinkOverride: false,
+      deletedAt: null,
+    });
 
-  for (const h of hackathons) {
-    try {
-      const res = await axios.head(h.registrationLink, { timeout: 10000 });
-      if (h.isRegistrationLinkBroken && res.status < 400) {
-        h.isRegistrationLinkBroken = false;
-        await h.save();
-      }
-    } catch {
-      if (!h.isRegistrationLinkBroken) {
-        h.isRegistrationLinkBroken = true;
-        await h.save();
+    for (const h of hackathons) {
+      try {
+        const res = await axios.head(h.registrationLink, { timeout: 10000 });
+        if (h.isRegistrationLinkBroken && res.status < 400) {
+          h.isRegistrationLinkBroken = false;
+          await h.save();
+        }
+      } catch (err) {
+        if (!h.isRegistrationLinkBroken) {
+          h.isRegistrationLinkBroken = true;
+          await h.save();
+        }
       }
     }
+  } catch (err) {
+    console.error('Link check cycle failed:', err);
   }
 }
 
 async function autoArchive() {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const result = await Hackathon.updateMany(
-    { endDate: { $lt: sixMonthsAgo }, isArchived: false, deletedAt: null },
-    { $set: { isArchived: true, archivedAt: new Date() } }
-  );
+    const result = await Hackathon.updateMany(
+      { endDate: { $lt: sixMonthsAgo }, isArchived: false, deletedAt: null },
+      { $set: { isArchived: true, archivedAt: new Date() } }
+    );
 
-  if (result.modifiedCount > 0) {
-    console.log(`Auto-archived ${result.modifiedCount} old hackathon(s)`);
+    if (result.modifiedCount > 0) {
+      console.log(`Auto-archived ${result.modifiedCount} old hackathon(s)`);
+    }
+  } catch (err) {
+    console.error('Auto-archive cycle failed:', err);
   }
 }
 

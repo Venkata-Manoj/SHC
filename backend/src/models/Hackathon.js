@@ -41,9 +41,7 @@ const hackathonSchema = new mongoose.Schema({
   visibleFields: { type: [String], default: [] },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 hackathonSchema.index({ name: 1, startDate: 1 });
 hackathonSchema.index({ status: 1, startDate: -1 });

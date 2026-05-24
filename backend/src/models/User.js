@@ -15,9 +15,7 @@ const userSchema = new mongoose.Schema({
   lastLoginAt: Date,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
@@ -36,5 +34,7 @@ userSchema.methods.toJSON = function () {
   delete obj.resetPasswordExpires;
   return obj;
 };
+
+userSchema.index({ role: 1 });
 
 export default mongoose.model('User', userSchema);

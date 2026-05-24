@@ -35,6 +35,7 @@ export async function vote(req, res, next) {
       { $inc: { votes: 1 } },
       { new: true }
     );
+    if (!feedback) return res.status(404).json({ error: 'Feedback not found' });
     res.json(feedback);
   } catch (err) {
     next(err);

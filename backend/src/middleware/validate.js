@@ -21,7 +21,10 @@ function validateRegistrationDomain(value) {
 }
 
 export const validateHackathon = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('name').trim().notEmpty().withMessage('Name is required')
+    .isLength({ max: 200 }).withMessage('Name must be 200 characters or less'),
+  body('description').optional().trim()
+    .isLength({ max: 5000 }).withMessage('Description must be 5000 characters or less'),
   body('startDate').isISO8601().withMessage('Valid start date required'),
   body('endDate').isISO8601().withMessage('Valid end date required'),
   body('registrationLink').isURL().withMessage('Valid registration link required')

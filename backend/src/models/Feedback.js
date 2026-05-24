@@ -7,7 +7,9 @@ const feedbackSchema = new mongoose.Schema({
   type: { type: String, enum: ['FEEDBACK', 'FEATURE_REQUEST', 'BUG_REPORT'], default: 'FEEDBACK' },
   votes: { type: Number, default: 0 },
   isRead: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
+
+feedbackSchema.index({ createdAt: -1 });
+feedbackSchema.index({ type: 1, createdAt: -1 });
 
 export default mongoose.model('Feedback', feedbackSchema);

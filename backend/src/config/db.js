@@ -15,7 +15,8 @@ export async function connectDB() {
       if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
     }
   }
-  console.warn('Server starting without MongoDB — API endpoints requiring DB will fail');
+  console.error('MongoDB connection failed after 3 attempts — exiting');
+  process.exit(1);
 }
 
 export function getConnectionStatus() {

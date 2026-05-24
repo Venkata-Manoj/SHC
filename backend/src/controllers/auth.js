@@ -64,7 +64,7 @@ export async function updateProfile(req, res, next) {
     for (const field of ['name', 'college', 'department', 'profileImage']) {
       if (req.body[field]) updates[field] = req.body[field];
     }
-    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true });
     res.json(user);
   } catch (err) {
     next(err);
@@ -81,7 +81,7 @@ export async function inviteCoordinator(req, res, next) {
     const token = crypto.randomBytes(32).toString('hex');
     const invite = await Invite.create({
       email,
-      token,
+      tokenHash: Invite.hashToken(token),
       role: 'COORDINATOR',
       scope: scope || [],
       invitedBy: req.user.id,
@@ -96,7 +96,8 @@ export async function inviteCoordinator(req, res, next) {
 export async function acceptInvite(req, res, next) {
   try {
     const { token, password, name } = req.body;
-    const invite = await Invite.findOne({ token, usedAt: null, expiresAt: { $gt: new Date() } });
+    const tokenHash = Invite.hashToken(token);
+    const invite = await Invite.findOne({ tokenHash, usedAt: null, expiresAt: { $gt: new Date() } });
     if (!invite) {
       return res.status(400).json({ error: 'Invalid or expired invite' });
     }
